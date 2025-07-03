@@ -200,6 +200,8 @@
             ]
         }
     },
+
+    // second batch
     {
         "arabic": "أَوْتَادًا",
         "english": "(as) pegs,",
@@ -404,6 +406,8 @@
             ]
         }
     },
+
+    // third batch
     {
         "arabic": "مِنَ",
         "english": "from",
@@ -597,6 +601,8 @@
             ]
         }
     },
+
+    // fourth batcth
     {
         "arabic": "ٱلصُّورِ",
         "english": "the trumpet",
@@ -805,6 +811,8 @@
             ]
         }
     },
+
+    // fifth batch
     {
         "arabic": "أَحْقَابًا",
         "english": "(for) ages.",
@@ -998,6 +1006,8 @@
             ]
         }
     },
+
+    // sixth batch
     {
         "arabic": "وَكَذَّبُواْ",
         "english": "And denied",
@@ -1214,6 +1224,8 @@
             ]
         }
     },
+
+    // sixth batch
     {
         "arabic": "أَتْرَابًا",
         "english": "well-matched,",
@@ -1413,6 +1425,8 @@
             ]
         }
     },
+
+    // seventh batch
     {
         "arabic": "وَمَا",
         "english": "and whatever",
@@ -1599,6 +1613,8 @@
             ]
         }
     },
+
+    // eighth batch
     {
         "arabic": "أَذِنَ",
         "english": "permits",
@@ -1810,6 +1826,8 @@
             ]
         }
     },
+
+    // ninth batch
     {
         "arabic": "يَوْمَ",
         "english": "(the) Day",

@@ -1,0 +1,883 @@
+<!-- error -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quran Quiz: Surah An-Naba</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for Arabic and general UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Noto+Naskh+Arabic:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Link to the separate data files -->
+    <script src="./data-refined.js"></script>
+    <script src="./data-german.js"></script>
+    <script src="./data-japanese.js"></script>
+
+    <style>
+        .font-arabic { font-family: 'Amiri', 'Noto Naskh Arabic', serif; }
+        body { font-family: 'Inter', sans-serif; }
+        .correct-answer { background-color: #22c55e !important; color: white !important; border-color: #16a34a !important; }
+        .wrong-answer { background-color: #ef4444 !important; color: white !important; border-color: #dc2626 !important; }
+        .no-pointer-events { pointer-events: none; }
+        .mode-active { background-color: #eff6ff; border-color: #3b82f6; }
+        .word-pinned { background-color: #fef08a !important; border-color: #facc15 !important; }
+        /* Styling for ruby text to ensure proper alignment */
+        ruby {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.1;
+        }
+        rt {
+            font-size: 0.65rem;
+            opacity: 0.9;
+            line-height: 1;
+        }
+        .sortable-header {
+            cursor: pointer;
+        }
+        .sortable-header:hover {
+            background-color: #f9fafb;
+        }
+        .popup-visible {
+            transform: translateX(0) !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div id="app-container" class="w-full max-w-3xl mx-auto">
+        
+        <!-- === MAIN MENU SCREEN === -->
+        <div id="main-menu-screen">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">Language Quiz</h1>
+                <p class="text-gray-600 mt-2">Select a quiz to begin</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button id="start-quran-quiz" class="p-8 rounded-lg border-2 text-center font-bold text-xl hover:bg-blue-50 hover:border-blue-400 transition-all">
+                    Quran Quiz<br><span class="text-sm font-normal text-gray-500">(Surah An-Naba)</span>
+                </button>
+                <button id="start-supplementary-quiz" class="p-8 rounded-lg border-2 text-center font-bold text-xl hover:bg-green-50 hover:border-green-400 transition-all">
+                    Supplementary Quiz<br><span class="text-sm font-normal text-gray-500">(Common Words)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- === SUPPLEMENTARY MENU SCREEN === -->
+        <div id="supplementary-menu-screen" class="hidden">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">Supplementary Quiz</h1>
+                <p class="text-gray-600 mt-2">Choose a language to practice</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 space-y-4">
+                <button data-supp-lang="de" class="w-full p-6 rounded-lg border-2 text-center font-bold text-xl hover:bg-gray-50 transition-all">German Common Words</button>
+                <button data-supp-lang="jp" class="w-full p-6 rounded-lg border-2 text-center font-bold text-xl hover:bg-gray-50 transition-all">Japanese Common Words</button>
+                <button id="back-to-main-menu" class="w-full mt-4 bg-gray-200 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-300 transition-all">Back to Main Menu</button>
+            </div>
+        </div>
+
+        <!-- === SETTINGS SCREEN === -->
+        <div id="settings-screen" class="hidden">
+            <div class="text-center mb-8">
+                <h1 id="settings-title" class="text-3xl sm:text-4xl font-bold text-gray-800"></h1>
+                <p id="settings-disclaimer" class="text-xs text-red-700 mt-2 bg-red-100 p-2 rounded-md border border-red-200 hidden">Disclaimer: This quiz uses unconfirmed AI translations. Please use it sparingly and verify with authentic sources.</p>
+                <p class="text-gray-600 mt-4">Configure your quiz</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 space-y-6">
+                <!-- Quiz Type Selection -->
+                <div>
+                    <label class="font-semibold text-gray-700">1. Choose Quiz Type (Click active button to reverse):</label>
+                    <div id="quiz-type-selector" class="mt-2 grid grid-cols-2 gap-4"></div>
+                </div>
+                <!-- Quiz Mode Selection -->
+                <div id="quiz-mode-container">
+                    <label class="font-semibold text-gray-700">2. Choose Quiz Mode:</label>
+                    <div id="quiz-mode-selector" class="mt-2 border-2 p-4 rounded-lg space-y-4">
+                        <div id="mode-random" class="mode-option p-4 rounded-lg border-2 cursor-pointer">
+                            <h4 class="font-bold text-lg">Randomized Quiz</h4>
+                            <p class="text-sm text-gray-600 mb-3">Test yourself with a random selection of words.</p>
+                            <label for="random-quiz-slider" class="text-sm font-medium">Number of questions: <span id="slider-value" class="font-bold text-blue-600">20</span></label>
+                            <input id="random-quiz-slider" type="range" min="5" max="50" value="20" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div id="mode-sequential" class="mode-option p-4 rounded-lg border-2 cursor-pointer">
+                             <h4 class="font-bold text-lg">Sequential Practice</h4>
+                             <p class="text-sm text-gray-600">Click words below to pin them for a custom quiz.</p>
+                             <div id="progress-view" class="mt-3 grid grid-cols-8 sm:grid-cols-12 gap-2 max-h-48 overflow-y-auto"></div>
+                             <div id="pinned-quiz-controls" class="mt-3 text-center hidden">
+                                <p class="font-semibold mb-2">Pinned: <span id="pinned-count">0</span>/20</p>
+                                <button id="start-pinned-quiz-btn" class="bg-yellow-400 text-yellow-900 font-bold py-2 px-6 rounded-lg shadow-md hover:bg-yellow-500 transition-all">Start Pinned Quiz</button>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+                 <!-- View History Button -->
+                <button id="view-history-btn" class="w-full bg-gray-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-gray-700 transition-all duration-300">
+                    View Quiz History
+                </button>
+                <!-- Word Progress Section -->
+                <div id="word-progress-section" class="pt-4 border-t">
+                     <h3 class="font-semibold text-gray-700 mb-2">Mastery Progress (<span id="progress-lang-display"></span>)</h3>
+                     <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
+                         <div id="mastery-progress-bar" class="bg-blue-600 h-4 rounded-full text-xs text-white text-center leading-none" style="width: 0%;"></div>
+                     </div>
+                     <h3 class="font-semibold text-gray-700 mb-2">Word Progress</h3>
+                     <div class="max-h-64 overflow-y-auto border rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead id="progress-table-header" class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th data-sort="number" class="sortable-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"># <span class="sort-indicator"></span></th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Word</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correct</th>
+                                    <th data-sort="mistakes" class="sortable-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mistakes <span class="sort-indicator"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="word-progress-table-body" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                     </div>
+                </div>
+                 <button id="back-to-menu-from-settings" class="w-full mt-4 bg-gray-200 text-gray-800 font-bold py-3 rounded-lg hover:bg-gray-300 transition-all">Back to Menu</button>
+            </div>
+        </div>
+
+        <!-- === QUIZ SCREEN === -->
+        <div id="quiz-screen" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <button id="quit-quiz-btn" class="px-4 py-2 font-semibold text-white bg-red-500 rounded-lg shadow-md hover:bg-red-600 transition-all">Quit</button>
+                <div id="score-display" class="text-lg font-semibold text-blue-600">Score: 0</div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 relative min-h-[450px] flex flex-col">
+                <div id="question-count" class="absolute top-4 left-6 text-gray-400 text-sm font-medium"></div>
+                <div class="text-center mb-6 flex-grow flex flex-col items-center justify-center">
+                    <div id="question-text" class="text-4xl md:text-5xl font-bold text-gray-900"></div>
+                    <div id="english-hint-container" class="text-lg md:text-xl text-gray-600 mt-3 h-8"></div>
+                </div>
+                <div id="mcq-options" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+            </div>
+        </div>
+
+        <!-- === RESULTS SCREEN === -->
+        <div id="results-screen" class="hidden text-center">
+             <div class="bg-white rounded-2xl shadow-lg p-8 sm:p-12">
+                <h1 class="text-4xl font-bold text-gray-800">Quiz Complete!</h1>
+                <p class="text-gray-600 mt-4 text-xl">Your final score is:</p>
+                <div id="final-score" class="text-6xl font-bold text-blue-600 my-6"></div>
+                <button id="play-again-btn" class="w-full max-w-xs mx-auto bg-green-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300">
+                    Play Again
+                </button>
+            </div>
+        </div>
+        
+        <!-- === HISTORY SCREEN === -->
+        <div id="history-screen" class="hidden">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">Quiz History</h1>
+                <p class="text-gray-600 mt-2">Your last 15 results for <span id="history-quiz-type-display" class="font-bold"></span></p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 space-y-4">
+                <ul id="history-list" class="space-y-3 max-h-96 overflow-y-auto"></ul>
+                <button id="back-to-settings-btn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-blue-700 transition-all duration-300 mt-4">
+                    Back to Setup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- === ACHIEVEMENT POPUP === -->
+    <div id="achievement-popup" class="fixed top-5 right-5 bg-white border-l-4 border-green-500 text-green-800 p-4 rounded-lg shadow-lg hidden transition-transform duration-500 translate-x-full z-50">
+        <div class="flex items-center">
+            <svg class="w-8 h-8 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div>
+                <p class="font-bold">Achievement Unlocked!</p>
+                <p id="achievement-message" class="text-sm">You've unlocked a new mode!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- NOTE: wordData, germanWords, japaneseWords are now loaded from external files ---
+
+        // --- DOM Elements ---
+        const mainMenuScreen = document.getElementById('main-menu-screen');
+        const supplementaryMenuScreen = document.getElementById('supplementary-menu-screen');
+        const settingsScreen = document.getElementById('settings-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const historyScreen = document.getElementById('history-screen');
+        
+        const startQuranQuizBtn = document.getElementById('start-quran-quiz');
+        const startSupplementaryQuizBtn = document.getElementById('start-supplementary-quiz');
+        const backToMainMenuBtn = document.getElementById('back-to-main-menu');
+        const backToMenuFromSettingsBtn = document.getElementById('back-to-menu-from-settings');
+
+        const settingsTitle = document.getElementById('settings-title');
+        const settingsDisclaimer = document.getElementById('settings-disclaimer');
+        const quizTypeSelector = document.getElementById('quiz-type-selector');
+        const quizModeContainer = document.getElementById('quiz-mode-container');
+        const quizModeSelector = document.getElementById('quiz-mode-selector');
+        const slider = document.getElementById('random-quiz-slider');
+        const sliderValue = document.getElementById('slider-value');
+        const progressViewContainer = document.getElementById('progress-view');
+        const pinnedQuizControls = document.getElementById('pinned-quiz-controls');
+        const pinnedCountEl = document.getElementById('pinned-count');
+        const startPinnedQuizBtn = document.getElementById('start-pinned-quiz-btn');
+        
+        const viewHistoryBtn = document.getElementById('view-history-btn');
+        const backToSettingsBtn = document.getElementById('back-to-settings-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const quitQuizBtn = document.getElementById('quit-quiz-btn');
+
+        const scoreDisplay = document.getElementById('score-display');
+        const questionCountEl = document.getElementById('question-count');
+        const questionTextEl = document.getElementById('question-text');
+        const englishHintContainer = document.getElementById('english-hint-container');
+        const mcqOptionsContainer = document.getElementById('mcq-options');
+        const finalScoreEl = document.getElementById('final-score');
+        const historyListEl = document.getElementById('history-list');
+        const wordProgressTableBody = document.getElementById('word-progress-table-body');
+        const masteryProgressBar = document.getElementById('mastery-progress-bar');
+        const progressLangDisplay = document.getElementById('progress-lang-display');
+        const historyQuizTypeDisplay = document.getElementById('history-quiz-type-display');
+        const progressTableHeader = document.getElementById('progress-table-header');
+        const wordProgressSection = document.getElementById('word-progress-section');
+
+        // --- State ---
+        let currentQuizContext = {
+            data: [],
+            name: '',
+            prefix: ''
+        };
+        let quizSettings = { quizType: null, mode: 'sequential' };
+        let quizState = { questions: [], currentQuestionIndex: 0, score: 0, answered: false };
+        let sortState = { column: 'number', direction: 'asc' };
+        let pinnedWords = [];
+
+        // --- Functions ---
+        
+        function generateRubyHTML(jpData) {
+            if (!Array.isArray(jpData)) return `<span>${jpData}</span>`;
+            return jpData.map(part => part.furigana ? `<ruby>${part.text}<rt>${part.furigana}</rt></ruby>` : `<span>${part.text}</span>`).join('');
+        }
+
+        function getStorageKey(base, type) {
+            return `${base}_${type}`;
+        }
+
+        function getWordProgress(type) {
+            if (!type) return {};
+            const key = getStorageKey('quranQuizWordProgress', type);
+            return JSON.parse(localStorage.getItem(key)) || {};
+        }
+
+        function updateWordProgress(wordIndex, isCorrect, type) {
+            if (type === 'chaos' || currentQuizContext.prefix === 'supp') return;
+            const key = getStorageKey('quranQuizWordProgress', type);
+            const progress = JSON.parse(localStorage.getItem(key)) || {};
+            if (!progress[wordIndex]) {
+                progress[wordIndex] = { correct: 0, incorrect: 0 };
+            }
+            isCorrect ? progress[wordIndex].correct++ : progress[wordIndex].incorrect++;
+            localStorage.setItem(key, JSON.stringify(progress));
+        }
+        
+        function getPinnedWords(type) {
+            if (!type) return [];
+            const key = getStorageKey('quranQuizPinnedWords', type);
+            return JSON.parse(localStorage.getItem(key)) || [];
+        }
+
+        function savePinnedWords(pins, type) {
+            if (!type) return;
+            const key = getStorageKey('quranQuizPinnedWords', type);
+            localStorage.setItem(key, JSON.stringify(pins));
+        }
+
+        function getModeMastery(type) {
+            const progress = getWordProgress(type);
+            let masteredWords = 0;
+            wordData.forEach((_, index) => {
+                const stats = progress[index] || { correct: 0, incorrect: 0 };
+                const total = stats.correct + stats.incorrect;
+                if (total > 0 && (stats.correct / total) >= 0.8) {
+                    masteredWords++;
+                }
+            });
+            return wordData.length > 0 ? (masteredWords / wordData.length) * 100 : 0;
+        }
+
+        function showAchievementPopup(message) {
+            const popup = document.getElementById('achievement-popup');
+            const messageEl = document.getElementById('achievement-message');
+
+            messageEl.textContent = message;
+            popup.classList.remove('hidden');
+            setTimeout(() => {
+                popup.classList.add('popup-visible');
+            }, 10);
+
+            setTimeout(() => {
+                popup.classList.remove('popup-visible');
+                setTimeout(() => {
+                    popup.classList.add('hidden');
+                }, 500);
+            }, 4000);
+        }
+
+        function getUnlockState() {
+            return JSON.parse(localStorage.getItem('quranQuizUnlocks')) || {
+                reverseDe: false, reverseJp: false, deJp: false, chaos: false
+            };
+        }
+
+        function saveUnlockState(state) {
+            localStorage.setItem('quranQuizUnlocks', JSON.stringify(state));
+        }
+
+        function checkUnlocks() {
+            const masteryDe = getModeMastery('ar-de');
+            const masteryJp = getModeMastery('ar-jp');
+            const unlockState = getUnlockState();
+            let stateChanged = false;
+
+            if (!unlockState.reverseDe && masteryDe >= 20) {
+                showAchievementPopup("Reverse German mode unlocked!");
+                unlockState.reverseDe = true;
+                stateChanged = true;
+            }
+
+            if (!unlockState.reverseJp && masteryJp >= 20) {
+                showAchievementPopup("Reverse Japanese mode unlocked!");
+                unlockState.reverseJp = true;
+                stateChanged = true;
+            }
+
+            const deJpUnlocked = masteryDe >= 60 && masteryJp >= 60;
+            if (!unlockState.deJp && deJpUnlocked) {
+                showAchievementPopup("German ↔ Japanese mode unlocked!");
+                unlockState.deJp = true;
+                stateChanged = true;
+            }
+            const deJpButton = document.querySelector('[data-type-pair="de-jp"]');
+            if(deJpButton) {
+                deJpButton.disabled = !deJpUnlocked;
+                deJpButton.textContent = deJpUnlocked ? 'German ↔ Japanese' : `??? Mode (60%)`;
+            }
+
+            const chaosUnlocked = masteryDe >= 40 && masteryJp >= 40;
+            if (!unlockState.chaos && chaosUnlocked) {
+                showAchievementPopup("Chaos Mode unlocked!");
+                unlockState.chaos = true;
+                stateChanged = true;
+            }
+            const chaosButton = document.querySelector('[data-type-pair="chaos"]');
+            if(chaosButton) {
+                chaosButton.disabled = !chaosUnlocked;
+                chaosButton.textContent = chaosUnlocked ? 'Chaos Mode' : `??? Mode (40%)`;
+            }
+
+            if (stateChanged) {
+                saveUnlockState(unlockState);
+            }
+        }
+
+        function updateSettings(type, value) {
+            quizSettings[type] = value;
+            if (type === 'quizType') {
+                pinnedWords = getPinnedWords(value); // Load pins for the selected type
+                const typeTextMap = { 'ar-de': 'Arabic → German', 'de-ar': 'German → Arabic', 'ar-jp': 'Arabic → Japanese', 'jp-ar': 'Japanese → Arabic', 'de-jp': 'German → Japanese', 'jp-de': 'Japanese → German', 'chaos': 'Chaos Mode', 'de-en': 'German → English', 'en-de': 'English → German', 'jp-en': 'Japanese → English', 'en-jp': 'English → Japanese' };
+                
+                document.querySelectorAll('.type-option').forEach(btn => {
+                    const pair = btn.dataset.typePair;
+                    const isSelected = value === pair || value === `${pair.split('-')[1]}-${pair.split('-')[0]}` || (value === 'chaos' && pair === 'chaos');
+                    btn.classList.toggle('bg-blue-100', isSelected);
+                    btn.classList.toggle('border-blue-500', isSelected);
+
+                    if (pair !== 'chaos' && !btn.disabled) {
+                        const [p1, p2] = pair.split('-');
+                        const defaultText = `${p1.toUpperCase()} ↔ ${p2.toUpperCase()}`.replace(/DE/g, 'German').replace(/AR/g, 'Arabic').replace(/JP/g, 'Japanese').replace(/EN/g, 'English');
+                        if (value === pair) btn.textContent = typeTextMap[pair];
+                        else if (value === `${p2}-${p1}`) btn.textContent = typeTextMap[`${p2}-${p1}`];
+                        else btn.textContent = defaultText;
+                    }
+                });
+
+                const isChaos = value === 'chaos';
+                wordProgressSection.classList.toggle('hidden', isChaos || currentQuizContext.prefix === 'supp');
+                quizModeContainer.classList.toggle('hidden', isChaos);
+
+                renderWordProgress(value);
+                populateProgressView(value);
+                updatePinnedUI();
+            }
+            if (type === 'mode') {
+                document.querySelectorAll('.mode-option').forEach(opt => {
+                    opt.classList.toggle('mode-active', opt.id === `mode-${value}`);
+                });
+                const isSequential = value === 'sequential';
+                progressViewContainer.classList.toggle('hidden', !isSequential);
+                if (isSequential) {
+                    updatePinnedUI();
+                } else {
+                    pinnedQuizControls.classList.add('hidden');
+                }
+            }
+        }
+
+        function populateProgressView(type) {
+            progressViewContainer.innerHTML = '';
+            const progress = getWordProgress(type);
+
+            currentQuizContext.data.forEach((word, index) => {
+                const button = document.createElement('button');
+                button.textContent = index + 1;
+                button.dataset.index = index;
+                
+                let colorClass = 'bg-gray-100 border-gray-300 hover:bg-blue-100 hover:border-blue-500';
+                if (currentQuizContext.prefix !== 'supp') {
+                    const stats = progress[index] || { correct: 0, incorrect: 0 };
+                    const totalAttempts = stats.correct + stats.incorrect;
+
+                    if (totalAttempts >= 5) {
+                        const ratio = stats.correct / totalAttempts;
+                        if (ratio >= 0.76) colorClass = 'bg-green-400 border-green-600 text-white';
+                        else if (ratio >= 0.5) colorClass = 'bg-green-200 border-green-400';
+                        else if (ratio >= 0.25) colorClass = 'bg-orange-200 border-orange-400';
+                        else colorClass = 'bg-red-200 border-red-400';
+                    }
+                }
+                
+                button.className = `progress-word-btn h-10 w-10 flex items-center justify-center rounded-md border-2 font-semibold transition-all ${colorClass}`;
+                if (pinnedWords.includes(index)) {
+                    button.classList.add('word-pinned');
+                }
+                button.addEventListener('click', handleSequentialClick);
+                progressViewContainer.appendChild(button);
+            });
+        }
+        
+        function handleSequentialClick(e) {
+            const button = e.currentTarget;
+            const index = parseInt(button.dataset.index);
+            togglePin(index, button);
+        }
+
+        function togglePin(index, buttonEl) {
+            const pinIndex = pinnedWords.indexOf(index);
+            if (pinIndex > -1) {
+                pinnedWords.splice(pinIndex, 1); // Unpin
+                buttonEl.classList.remove('word-pinned');
+            } else {
+                if (pinnedWords.length < 20) {
+                    pinnedWords.push(index); // Pin
+                    buttonEl.classList.add('word-pinned');
+                } else {
+                    alert('You can only pin up to 20 words.');
+                }
+            }
+            savePinnedWords(pinnedWords, quizSettings.quizType);
+            updatePinnedUI();
+        }
+
+        function updatePinnedUI() {
+            pinnedCountEl.textContent = pinnedWords.length;
+            pinnedQuizControls.classList.toggle('hidden', pinnedWords.length === 0);
+        }
+
+        function renderWordProgress(type) {
+            const typeText = quizSettings.quizType ? (document.querySelector(`[data-type-pair="${quizSettings.quizType}"]`)?.textContent || document.querySelector(`[data-type-pair="${quizSettings.quizType.split('-').reverse().join('-')}"]`)?.textContent || "N/A") : '...';
+
+            if (!type || type === 'chaos' || currentQuizContext.prefix === 'supp') {
+                wordProgressSection.classList.add('hidden');
+                return;
+            }
+            wordProgressSection.classList.remove('hidden');
+            
+            progressLangDisplay.textContent = typeText;
+            const progress = getWordProgress(type);
+            let masteredWords = 0;
+
+            let displayData = currentQuizContext.data.map((word, index) => {
+                const stats = progress[index] || { correct: 0, incorrect: 0 };
+                return { ...word, index, correct: stats.correct, incorrect: stats.incorrect };
+            });
+
+            displayData.sort((a, b) => {
+                const dir = sortState.direction === 'asc' ? 1 : -1;
+                if (sortState.column === 'number') return (a.index - b.index) * dir;
+                if (sortState.column === 'mistakes') return (a.incorrect - b.incorrect) * dir;
+                return 0;
+            });
+
+            wordProgressTableBody.innerHTML = '';
+            displayData.forEach(item => {
+                const row = document.createElement('tr');
+                const wordCellContent = currentQuizContext.prefix === 'quran' ? item.arabic : (item.question.map ? generateRubyHTML(item.question) : item.question);
+                const wordCellClass = currentQuizContext.prefix === 'quran' ? 'font-arabic' : '';
+                row.innerHTML = `
+                    <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${item.index + 1}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-lg ${wordCellClass}">${wordCellContent}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm text-green-600 font-semibold">${item.correct}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm text-red-600 font-semibold">${item.incorrect}</td>
+                `;
+                wordProgressTableBody.appendChild(row);
+            });
+            
+            currentQuizContext.data.forEach((_, index) => {
+                const stats = progress[index] || { correct: 0, incorrect: 0 };
+                const totalAttempts = stats.correct + stats.incorrect;
+                if (totalAttempts > 0 && (stats.correct / totalAttempts) >= 0.8) masteredWords++;
+            });
+
+            const masteryPercent = currentQuizContext.data.length > 0 ? (masteredWords / currentQuizContext.data.length) * 100 : 0;
+            masteryProgressBar.style.width = `${masteryPercent}%`;
+            masteryProgressBar.textContent = `${masteryPercent.toFixed(0)}%`;
+
+            document.querySelectorAll('.sort-indicator').forEach(el => el.textContent = '');
+            const activeHeader = document.querySelector(`th[data-sort="${sortState.column}"] .sort-indicator`);
+            if (activeHeader) activeHeader.textContent = sortState.direction === 'asc' ? ' ▲' : ' ▼';
+        }
+        
+        function startQuiz({ startIndex, numQuestions, customQuestions }) {
+            if (!quizSettings.quizType) {
+                alert('Please select a quiz type first!');
+                return;
+            }
+            
+            if (customQuestions) {
+                quizState.questions = [...customQuestions].sort(() => 0.5 - Math.random());
+            }
+            else if (quizSettings.quizType !== 'chaos' && quizSettings.mode === 'random') {
+                quizState.questions = [...currentQuizContext.data].sort(() => 0.5 - Math.random()).slice(0, numQuestions);
+            } else if (quizSettings.quizType === 'chaos') {
+                 quizState.questions = [...wordData].sort(() => 0.5 - Math.random()).slice(0, 20);
+            }
+            else {
+                quizState.questions = currentQuizContext.data.slice(startIndex);
+            }
+
+            if (quizState.questions.length === 0) return;
+            quizState.currentQuestionIndex = 0;
+            quizState.score = 0;
+            
+            settingsScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            quizState.answered = false;
+            const questionData = quizState.questions[quizState.currentQuestionIndex];
+            let [qLang, aLang] = quizSettings.quizType.split('-');
+            
+            if (quizSettings.quizType === 'chaos') {
+                const langs = ['ar', 'de', 'jp'];
+                qLang = langs[Math.floor(Math.random() * langs.length)];
+                do {
+                    aLang = langs[Math.floor(Math.random() * langs.length)];
+                } while (aLang === qLang);
+            }
+
+            // Question Text & Hint
+            questionTextEl.className = 'font-bold text-gray-900'; // Reset
+            let questionHTML = '';
+            let hintText = questionData.english || questionData.answer;
+
+            if (qLang === 'ar') {
+                questionHTML = questionData.arabic;
+                questionTextEl.classList.add('font-arabic', 'text-6xl', 'md:text-7xl');
+            } else if (qLang === 'de') {
+                questionHTML = currentQuizContext.prefix === 'supp' ? questionData.question : questionData.answer.du;
+                questionTextEl.classList.add('text-4xl', 'md:text-5xl');
+            } else if (qLang === 'jp') {
+                questionHTML = generateRubyHTML(currentQuizContext.prefix === 'supp' ? questionData.question : questionData.answer.jp);
+                questionTextEl.classList.add('text-4xl', 'md:text-5xl');
+            } else if (qLang === 'en') {
+                questionHTML = questionData.answer;
+                questionTextEl.classList.add('text-4xl', 'md:text-5xl');
+            }
+            questionTextEl.innerHTML = questionHTML;
+
+            englishHintContainer.innerHTML = '';
+            if (quizSettings.quizType !== 'chaos' && currentQuizContext.prefix === 'quran') {
+                englishHintContainer.innerHTML = `<button id="show-hint-btn" class="text-sm text-blue-600 border border-blue-600 rounded-full px-4 py-1 hover:bg-blue-50 transition-all">Show English Hint</button>`;
+                document.getElementById('show-hint-btn').addEventListener('click', () => {
+                    englishHintContainer.innerHTML = `<p>${hintText}</p>`;
+                });
+            }
+
+            // MCQ options setup
+            const correctAnswer = currentQuizContext.prefix === 'supp' ? questionData : questionData.answer;
+            let distractors = [];
+            while (distractors.length < 3) {
+                const randomWord = currentQuizContext.data[Math.floor(Math.random() * currentQuizContext.data.length)];
+                const randomAnswer = currentQuizContext.prefix === 'supp' ? randomWord : randomWord.answer;
+                if (randomAnswer.du !== correctAnswer.du && randomWord.question !== questionData.question) {
+                    distractors.push(randomAnswer);
+                }
+            }
+            
+            const options = [correctAnswer, ...distractors].sort(() => 0.5 - Math.random());
+            
+            mcqOptionsContainer.innerHTML = '';
+            options.forEach(option => {
+                const isCorrect = currentQuizContext.prefix === 'supp' ? (option.question === correctAnswer.question) : (option.du === correctAnswer.du);
+                const button = document.createElement('button');
+                button.className = 'mcq-option p-4 rounded-lg border-2 text-center font-semibold transition-all duration-200 hover:bg-gray-100 flex items-center justify-center min-h-[4rem]';
+                button.dataset.correct = isCorrect;
+                
+                let answerHTML = '';
+                if (aLang === 'ar') {
+                    answerHTML = `<span class="font-arabic text-2xl">${option.ar || wordData.find(w => w.answer.du === option.du).arabic}</span>`;
+                } else if (aLang === 'de') {
+                    answerHTML = `<span class="text-lg">${option.du || option.question}</span>`;
+                } else if (aLang === 'jp') {
+                    answerHTML = `<span class="text-lg">${generateRubyHTML(option.jp || option.question)}</span>`;
+                } else if (aLang === 'en') {
+                    answerHTML = `<span class="text-lg">${option.answer}</span>`;
+                }
+                button.innerHTML = answerHTML;
+                
+                button.addEventListener('click', handleAnswer);
+                mcqOptionsContainer.appendChild(button);
+            });
+        }
+
+        function handleAnswer(e) {
+            if (quizState.answered) return;
+            quizState.answered = true;
+            const isCorrect = e.currentTarget.dataset.correct === 'true';
+            
+            const currentQuestion = quizState.questions[quizState.currentQuestionIndex];
+            const wordIndex = currentQuizContext.data.findIndex(w => (w.arabic && w.arabic === currentQuestion.arabic) || (w.question === currentQuestion.question));
+            
+            updateWordProgress(wordIndex, isCorrect, quizSettings.quizType);
+            
+            if (isCorrect) quizState.score++;
+            
+            document.querySelectorAll('.mcq-option').forEach(btn => {
+                btn.classList.add('no-pointer-events');
+                if (btn.dataset.correct === 'true') btn.classList.add('correct-answer');
+                else btn.classList.add('wrong-answer');
+            });
+            
+            setTimeout(() => {
+                if (quizState.currentQuestionIndex < quizState.questions.length - 1) {
+                    quizState.currentQuestionIndex++;
+                    renderQuestion();
+                } else {
+                    showResults();
+                }
+            }, 800);
+        }
+
+        function showResults() {
+            quizScreen.classList.add('hidden');
+            resultsScreen.classList.remove('hidden');
+            const finalScoreText = `${quizState.score} / ${quizState.questions.length}`;
+            finalScoreEl.textContent = finalScoreText;
+            saveResultToHistory(finalScoreText);
+        }
+
+        function saveResultToHistory(scoreText) {
+            const type = quizSettings.quizType;
+            if (type === 'chaos') return;
+            const historyKey = getStorageKey('quranQuizHistory', type);
+            const history = JSON.parse(localStorage.getItem(historyKey)) || [];
+            const typeText = document.querySelector(`button[data-type-pair="${type}"]`)?.textContent || document.querySelector(`button[data-type-pair="${type.split('-').reverse().join('-')}"]`)?.textContent || "N/A";
+            const newResult = {
+                score: scoreText,
+                date: new Date().toLocaleString(),
+                type: typeText
+            };
+            history.unshift(newResult);
+            localStorage.setItem(historyKey, JSON.stringify(history.slice(0, 15)));
+        }
+
+        function renderHistory() {
+            if (!quizSettings.quizType || quizSettings.quizType === 'chaos') {
+                alert('Please select a standard quiz type to view its history.');
+                return;
+            }
+            const type = quizSettings.quizType;
+            const typeText = document.querySelector(`button[data-type-pair="${type}"]`)?.textContent || document.querySelector(`button[data-type-pair="${type.split('-').reverse().join('-')}"]`)?.textContent;
+            historyQuizTypeDisplay.textContent = typeText;
+            settingsScreen.classList.add('hidden');
+            historyScreen.classList.remove('hidden');
+            const historyKey = getStorageKey('quranQuizHistory', type);
+            const history = JSON.parse(localStorage.getItem(historyKey)) || [];
+            historyListEl.innerHTML = '';
+
+            if (history.length === 0) {
+                historyListEl.innerHTML = `<li class="text-center text-gray-500">No history found for this quiz type.</li>`;
+                return;
+            }
+
+            history.forEach(result => {
+                const li = document.createElement('li');
+                li.className = 'p-4 bg-gray-50 rounded-lg border flex justify-between items-center';
+                li.innerHTML = `<div><p class="font-bold text-lg text-gray-800">${result.score}</p></div><p class="text-xs text-gray-400">${result.date}</p>`;
+                historyListEl.appendChild(li);
+            });
+        }
+        
+        function resetApp() {
+            quizScreen.classList.add('hidden');
+            resultsScreen.classList.add('hidden');
+            historyScreen.classList.add('hidden');
+            settingsScreen.classList.add('hidden');
+            supplementaryMenuScreen.classList.add('hidden');
+            mainMenuScreen.classList.remove('hidden');
+            
+            quizSettings = { quizType: null, mode: 'sequential' };
+            pinnedWords = [];
+            updatePinnedUI();
+        }
+
+        function setupQuranQuiz() {
+            mainMenuScreen.classList.add('hidden');
+            settingsScreen.classList.remove('hidden');
+            settingsTitle.textContent = "Quran Quiz Setup";
+            settingsDisclaimer.classList.remove('hidden');
+            wordProgressSection.classList.remove('hidden');
+            viewHistoryBtn.classList.remove('hidden');
+
+            currentQuizContext = { data: wordData, name: 'Quran', prefix: 'quran' };
+            quizTypeSelector.innerHTML = `
+                <button data-type-pair="ar-de" class="type-option w-full p-4 rounded-lg border-2 font-semibold transition-all text-center">Arabic ↔ German</button>
+                <button data-type-pair="ar-jp" class="type-option w-full p-4 rounded-lg border-2 font-semibold transition-all text-center">Arabic ↔ Japanese</button>
+                <button data-type-pair="de-jp" data-unlock-level="60" class="type-option w-full p-4 rounded-lg border-2 font-semibold transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed">??? Mode</button>
+                <button data-type-pair="chaos" data-unlock-level="40" class="type-option w-full p-4 rounded-lg border-2 font-semibold transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed">??? Mode</button>
+            `;
+            
+            updateSettings('quizType', null);
+            updateSettings('mode', 'sequential');
+            checkUnlocks();
+            populateProgressView(null);
+            renderWordProgress(null);
+        }
+
+        function setupSupplementaryQuiz(lang) {
+            mainMenuScreen.classList.add('hidden');
+            supplementaryMenuScreen.classList.add('hidden');
+            settingsScreen.classList.remove('hidden');
+            settingsDisclaimer.classList.add('hidden');
+            wordProgressSection.classList.add('hidden');
+            viewHistoryBtn.classList.add('hidden');
+
+            if (lang === 'de') {
+                currentQuizContext = { data: germanWords, name: 'German', prefix: 'supp' };
+                settingsTitle.textContent = "German Common Words";
+                quizTypeSelector.innerHTML = `<button data-type-pair="de-en" class="type-option w-full p-4 rounded-lg border-2 font-semibold transition-all text-center col-span-2">German ↔ English</button>`;
+            } else {
+                currentQuizContext = { data: japaneseWords, name: 'Japanese', prefix: 'supp' };
+                settingsTitle.textContent = "Japanese Common Words";
+                quizTypeSelector.innerHTML = `<button data-type-pair="jp-en" class="type-option w-full p-4 rounded-lg border-2 font-semibold transition-all text-center col-span-2">Japanese ↔ English</button>`;
+            }
+            
+            updateSettings('quizType', null);
+            updateSettings('mode', 'sequential');
+            populateProgressView(null);
+        }
+
+        // --- Event Listeners ---
+        startQuranQuizBtn.addEventListener('click', setupQuranQuiz);
+        startSupplementaryQuizBtn.addEventListener('click', () => {
+            mainMenuScreen.classList.add('hidden');
+            supplementaryMenuScreen.classList.remove('hidden');
+        });
+        backToMainMenuBtn.addEventListener('click', () => {
+            supplementaryMenuScreen.classList.add('hidden');
+            mainMenuScreen.classList.remove('hidden');
+        });
+        backToMenuFromSettingsBtn.addEventListener('click', resetApp);
+
+        supplementaryMenuScreen.addEventListener('click', e => {
+            if (e.target.matches('[data-supp-lang]')) {
+                setupSupplementaryQuiz(e.target.dataset.suppLang);
+            }
+        });
+
+        quizTypeSelector.addEventListener('click', e => {
+            const button = e.target.closest('.type-option');
+            if (!button || button.disabled) return;
+
+            const pair = button.dataset.typePair;
+            if (pair === 'chaos') {
+                updateSettings('quizType', 'chaos');
+                startQuiz({});
+                return;
+            }
+
+            const [p1, p2] = pair.split('-');
+            const currentType = quizSettings.quizType;
+            
+            let reverseUnlocked = true; // Default for supplementary
+            if (currentQuizContext.prefix === 'quran') {
+                const unlockState = getUnlockState();
+                if (pair === 'ar-de') reverseUnlocked = unlockState.reverseDe;
+                else if (pair === 'ar-jp') reverseUnlocked = unlockState.reverseJp;
+            }
+
+            if (currentType === pair && reverseUnlocked) {
+                updateSettings('quizType', `${p2}-${p1}`);
+            } else {
+                updateSettings('quizType', pair);
+            }
+        });
+        
+        quizModeSelector.addEventListener('click', e => {
+            const modeOption = e.target.closest('.mode-option');
+            if (modeOption) {
+                const newMode = modeOption.id.replace('mode-', '');
+                if (quizSettings.mode !== newMode) {
+                    pinnedWords = [];
+                    updatePinnedUI();
+                }
+                updateSettings('mode', newMode);
+            }
+        });
+
+        slider.addEventListener('input', e => { sliderValue.textContent = e.target.value; });
+        slider.addEventListener('change', e => { // Changed from 'click' to 'change' for better reliability
+             if (quizSettings.mode === 'random') startQuiz({ numQuestions: parseInt(e.target.value) });
+        });
+        
+        progressTableHeader.addEventListener('click', e => {
+            const header = e.target.closest('.sortable-header');
+            if (!header) return;
+            const column = header.dataset.sort;
+            if (sortState.column === column) {
+                sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortState.column = column;
+                sortState.direction = 'asc';
+            }
+            renderWordProgress(quizSettings.quizType);
+        });
+        
+        startPinnedQuizBtn.addEventListener('click', () => {
+            if (pinnedWords.length > 0) {
+                const customQuestions = pinnedWords.map(index => currentQuizContext.data[index]);
+                startQuiz({ customQuestions });
+            }
+        });
+
+        viewHistoryBtn.addEventListener('click', renderHistory);
+        backToSettingsBtn.addEventListener('click', resetApp);
+        playAgainBtn.addEventListener('click', resetApp);
+        quitQuizBtn.addEventListener('click', resetApp);
+        
+        // --- Initial Load ---
+        resetApp();
+
+    </script>
+</body>
+</html>

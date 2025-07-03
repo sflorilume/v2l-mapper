@@ -23,6 +23,7 @@
         .wrong-answer { background-color: #ef4444 !important; color: white !important; border-color: #dc2626 !important; }
         .no-pointer-events { pointer-events: none; }
         .mode-active { background-color: #eff6ff; border-color: #3b82f6; }
+        .word-pinned { background-color: #fef08a !important; border-color: #facc15 !important; }
         /* Styling for ruby text to ensure proper alignment */
         ruby {
             display: inline-flex;
@@ -51,8 +52,8 @@
         <div id="settings-screen">
             <div class="text-center mb-8">
                 <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">Quran Quiz Setup</h1>
-                <p class="text-xs text-gray-700 mt-2 bg-gray-200 p-2 rounded-md border border-gray-200">Disclaimer: This quiz uses unconfirmed AI translations. Please use it sparingly and verify with authentic sources.</p>
-                <!-- <p class="text-gray-600 mt-4">Configure your quiz for Surah An-Naba</p> -->
+                <p class="text-xs text-red-700 mt-2 bg-red-100 p-2 rounded-md border border-red-200">Disclaimer: This quiz uses unconfirmed AI translations. Please use it sparingly and verify with authentic sources.</p>
+                <p class="text-gray-600 mt-4">Configure your quiz for Surah An-Naba</p>
             </div>
             <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 space-y-6">
                 <!-- Quiz Type Selection -->
@@ -77,8 +78,12 @@
                         </div>
                         <div id="mode-sequential" class="mode-option p-4 rounded-lg border-2 cursor-pointer">
                              <h4 class="font-bold text-lg">Sequential Practice</h4>
-                             <p class="text-sm text-gray-600">Start from a specific word and continue in order.</p>
-                             <div id="progress-view" class="mt-3 grid grid-cols-8 sm:grid-cols-12 gap-2 max-h-48 overflow-y-auto hidden"></div>
+                             <p class="text-sm text-gray-600">Click a word below to start from there, or pin multiple words for a custom quiz.</p>
+                             <div id="progress-view" class="mt-3 grid grid-cols-8 sm:grid-cols-12 gap-2 max-h-48 overflow-y-auto"></div>
+                             <div id="pinned-quiz-controls" class="mt-3 text-center hidden">
+                                <p class="font-semibold mb-2">Pinned: <span id="pinned-count">0</span>/20</p>
+                                <button id="start-pinned-quiz-btn" class="bg-yellow-400 text-yellow-900 font-bold py-2 px-6 rounded-lg shadow-md hover:bg-yellow-500 transition-all">Start Pinned Quiz</button>
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -168,6 +173,9 @@
         const slider = document.getElementById('random-quiz-slider');
         const sliderValue = document.getElementById('slider-value');
         const progressViewContainer = document.getElementById('progress-view');
+        const pinnedQuizControls = document.getElementById('pinned-quiz-controls');
+        const pinnedCountEl = document.getElementById('pinned-count');
+        const startPinnedQuizBtn = document.getElementById('start-pinned-quiz-btn');
         
         const viewHistoryBtn = document.getElementById('view-history-btn');
         const backToSettingsBtn = document.getElementById('back-to-settings-btn');
@@ -192,6 +200,7 @@
         let quizSettings = { quizType: null, mode: 'random' };
         let quizState = { questions: [], currentQuestionIndex: 0, score: 0, answered: false };
         let sortState = { column: 'number', direction: 'asc' };
+        let pinnedWords = [];
 
         // --- Functions ---
         
@@ -215,39 +224,36 @@
             localStorage.setItem(`quranQuizWordProgress_${type}`, JSON.stringify(progress));
         }
 
-        function getOverallMastery() {
-            const progressDe = getWordProgress('ar-de');
-            const progressJp = getWordProgress('ar-jp');
-            
-            let masteredDe = 0;
+        function getModeMastery(type) {
+            const progress = getWordProgress(type);
+            let masteredWords = 0;
             wordData.forEach((_, index) => {
-                const stats = progressDe[index] || { correct: 0, incorrect: 0 };
+                const stats = progress[index] || { correct: 0, incorrect: 0 };
                 const total = stats.correct + stats.incorrect;
-                if (total > 0 && (stats.correct / total) >= 0.8) masteredDe++;
+                if (total > 0 && (stats.correct / total) >= 0.8) {
+                    masteredWords++;
+                }
             });
-            const masteryDe = wordData.length > 0 ? (masteredDe / wordData.length) * 100 : 0;
-
-            let masteredJp = 0;
-            wordData.forEach((_, index) => {
-                const stats = progressJp[index] || { correct: 0, incorrect: 0 };
-                const total = stats.correct + stats.incorrect;
-                if (total > 0 && (stats.correct / total) >= 0.8) masteredJp++;
-            });
-            const masteryJp = wordData.length > 0 ? (masteredJp / wordData.length) * 100 : 0;
-
-            return Math.max(masteryDe, masteryJp);
+            return wordData.length > 0 ? (masteredWords / wordData.length) * 100 : 0;
         }
 
         function checkUnlocks() {
-            const mastery = getOverallMastery();
+            const masteryDe = getModeMastery('ar-de');
+            const masteryJp = getModeMastery('ar-jp');
 
             document.querySelectorAll('.type-option').forEach(btn => {
                 const unlockLevel = parseInt(btn.dataset.unlockLevel);
                 if (unlockLevel) {
-                    const isUnlocked = mastery >= unlockLevel;
+                    let isUnlocked = false;
+                    const pair = btn.dataset.typePair;
+                    if (pair === 'de-jp') {
+                        isUnlocked = masteryDe >= 60 && masteryJp >= 60;
+                    } else if (pair === 'chaos') {
+                        isUnlocked = masteryDe >= 40 && masteryJp >= 40;
+                    }
+
                     btn.disabled = !isUnlocked;
                     if (isUnlocked) {
-                        const pair = btn.dataset.typePair;
                         if (pair === 'de-jp') btn.textContent = 'German ↔ Japanese';
                         else if (pair === 'chaos') btn.textContent = 'Chaos Mode';
                     } else {
@@ -288,7 +294,13 @@
                 document.querySelectorAll('.mode-option').forEach(opt => {
                     opt.classList.toggle('mode-active', opt.id === `mode-${value}`);
                 });
-                progressViewContainer.classList.toggle('hidden', value !== 'sequential');
+                const isSequential = value === 'sequential';
+                progressViewContainer.classList.toggle('hidden', !isSequential);
+                if (isSequential) {
+                    updatePinnedUI();
+                } else {
+                    pinnedQuizControls.classList.add('hidden');
+                }
             }
         }
 
@@ -314,9 +326,45 @@
                 }
 
                 button.className = `progress-word-btn h-10 w-10 flex items-center justify-center rounded-md border-2 font-semibold transition-all ${colorClass}`;
-                button.addEventListener('click', () => startQuiz({ startIndex: index }));
+                button.addEventListener('click', handleSequentialClick);
                 progressViewContainer.appendChild(button);
             });
+        }
+        
+        function handleSequentialClick(e) {
+            const button = e.currentTarget;
+            const index = parseInt(button.dataset.index);
+
+            if (pinnedWords.length > 0) {
+                togglePin(index, button);
+            } else {
+                togglePin(index, button);
+            }
+        }
+
+        function togglePin(index, buttonEl) {
+            const pinIndex = pinnedWords.indexOf(index);
+            if (pinIndex > -1) {
+                pinnedWords.splice(pinIndex, 1); // Unpin
+                buttonEl.classList.remove('word-pinned');
+            } else {
+                if (pinnedWords.length < 20) {
+                    pinnedWords.push(index); // Pin
+                    buttonEl.classList.add('word-pinned');
+                } else {
+                    alert('You can only pin up to 20 words.');
+                }
+            }
+            updatePinnedUI();
+        }
+
+        function updatePinnedUI() {
+            pinnedCountEl.textContent = pinnedWords.length;
+            if (pinnedWords.length > 0) {
+                pinnedQuizControls.classList.remove('hidden');
+            } else {
+                pinnedQuizControls.classList.add('hidden');
+            }
         }
 
         function renderWordProgress(type) {
@@ -373,13 +421,16 @@
             if (activeHeader) activeHeader.textContent = sortState.direction === 'asc' ? ' ▲' : ' ▼';
         }
         
-        function startQuiz({ startIndex = 0, numQuestions = 0 }) {
+        function startQuiz({ startIndex, numQuestions, customQuestions }) {
             if (!quizSettings.quizType) {
                 alert('Please select a quiz type first!');
                 return;
             }
-
-            if (quizSettings.quizType !== 'chaos' && quizSettings.mode === 'random') {
+            
+            if (customQuestions) {
+                quizState.questions = [...customQuestions].sort(() => 0.5 - Math.random());
+            }
+            else if (quizSettings.quizType !== 'chaos' && quizSettings.mode === 'random') {
                 quizState.questions = [...wordData].sort(() => 0.5 - Math.random()).slice(0, numQuestions);
             } else if (quizSettings.quizType === 'chaos') {
                  quizState.questions = [...wordData].sort(() => 0.5 - Math.random()).slice(0, 20); // Chaos mode is always random 20
@@ -553,6 +604,8 @@
             checkUnlocks();
             renderWordProgress(quizSettings.quizType);
             populateProgressView(quizSettings.quizType);
+            pinnedWords = [];
+            updatePinnedUI();
         }
 
         // --- Event Listeners ---
@@ -569,9 +622,15 @@
 
             const [p1, p2] = pair.split('-');
             const currentType = quizSettings.quizType;
-            const mastery = getOverallMastery();
             
-            const reverseUnlocked = mastery >= 20;
+            let reverseUnlocked = false;
+            if (pair === 'ar-de') {
+                reverseUnlocked = getModeMastery('ar-de') >= 20;
+            } else if (pair === 'ar-jp') {
+                reverseUnlocked = getModeMastery('ar-jp') >= 20;
+            } else if (pair === 'de-jp') {
+                reverseUnlocked = true; // Assumes if de-jp is unlocked, reverse is too
+            }
 
             if (currentType === pair && reverseUnlocked) {
                 updateSettings('quizType', `${p2}-${p1}`); // Reverse if unlocked
@@ -582,7 +641,14 @@
         
         quizModeSelector.addEventListener('click', e => {
             const modeOption = e.target.closest('.mode-option');
-            if (modeOption) updateSettings('mode', modeOption.id.replace('mode-', ''));
+            if (modeOption) {
+                const newMode = modeOption.id.replace('mode-', '');
+                if (quizSettings.mode !== newMode) {
+                    pinnedWords = []; // Reset pins when switching mode
+                    updatePinnedUI();
+                }
+                updateSettings('mode', newMode);
+            }
         });
 
         slider.addEventListener('input', e => { sliderValue.textContent = e.target.value; });
@@ -603,6 +669,13 @@
             renderWordProgress(quizSettings.quizType);
         });
         
+        startPinnedQuizBtn.addEventListener('click', () => {
+            if (pinnedWords.length > 0) {
+                const customQuestions = pinnedWords.map(index => wordData[index]);
+                startQuiz({ customQuestions });
+            }
+        });
+
         viewHistoryBtn.addEventListener('click', renderHistory);
         backToSettingsBtn.addEventListener('click', resetApp);
         playAgainBtn.addEventListener('click', resetApp);
