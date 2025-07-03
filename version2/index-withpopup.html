@@ -1,0 +1,310 @@
+<!-- this one fixed so far. we'll gonna use this one -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>V2L Mapper</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts for Arabic and general UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Noto+Naskh+Arabic:wght@700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Link to Standard CSS styling -->
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- Link to the separate data file -->
+    <script src="./data-refined.js"></script>
+   
+
+  </head>
+  <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div id="app-container" class="w-full max-w-3xl mx-auto">
+      <!-- === SETTINGS SCREEN === -->
+      <div id="settings-screen">
+        <div class="text-center mb-8">
+          <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">
+            Quran Quiz Setup
+          </h1>
+          <p
+            class="text-xs text-gray-700 mt-2 bg-gray-200 p-2 rounded-md border border-gray-200"
+          >
+            Disclaimer: This quiz uses unconfirmed AI translations. Please use
+            it sparingly and verify with authentic sources.
+          </p>
+          <!-- <p class="text-gray-600 mt-4">Configure your quiz for Surah An-Naba</p> -->
+        </div>
+        <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 space-y-6">
+          <!-- Quiz Type Selection -->
+          <div>
+            <label class="font-semibold text-gray-700"
+              >1. Choose Quiz Type (Click active button to reverse):</label
+            >
+            <div id="quiz-type-selector" class="mt-2 grid grid-cols-2 gap-4">
+              <button
+                data-type-pair="ar-de"
+                class="type-option w-full p-4 rounded-lg border-2 font-semibold transition-all text-center"
+              >
+                Arabic ↔ German
+              </button>
+              <button
+                data-type-pair="ar-jp"
+                class="type-option w-full p-4 rounded-lg border-2 font-semibold transition-all text-center"
+              >
+                Arabic ↔ Japanese
+              </button>
+              <button
+                data-type-pair="de-jp"
+                data-unlock-level="80"
+                class="type-option w-full p-4 rounded-lg border-2 font-semibold transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ??? Mode
+              </button>
+              <button
+                data-type-pair="chaos"
+                data-unlock-level="40"
+                class="type-option w-full p-4 rounded-lg border-2 font-semibold transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ??? Mode
+              </button>
+            </div>
+          </div>
+          <!-- Quiz Mode Selection -->
+          <div id="quiz-mode-container">
+            <label class="font-semibold text-gray-700"
+              >2. Choose Quiz Mode:</label
+            >
+            <div
+              id="quiz-mode-selector"
+              class="mt-2 border-2 p-4 rounded-lg space-y-4"
+            >
+              <div
+                id="mode-random"
+                class="mode-option p-4 rounded-lg border-2 cursor-pointer"
+              >
+                <h4 class="font-bold text-lg">Randomized Quiz</h4>
+                <p class="text-sm text-gray-600 mb-3">
+                  Test yourself with a random selection of words.
+                </p>
+                <label for="random-quiz-slider" class="text-sm font-medium"
+                  >Number of questions:
+                  <span id="slider-value" class="font-bold text-blue-600"
+                    >20</span
+                  ></label
+                >
+                <input
+                  id="random-quiz-slider"
+                  type="range"
+                  min="5"
+                  max="50"
+                  value="20"
+                  class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+              <div
+                id="mode-sequential"
+                class="mode-option p-4 rounded-lg border-2 cursor-pointer"
+              >
+                <h4 class="font-bold text-lg">Sequential Practice</h4>
+                <p class="text-sm text-gray-600">
+                  Click a word below to start from there, or pin multiple words
+                  for a custom quiz.
+                </p>
+                <div
+                  id="progress-view"
+                  class="mt-3 grid grid-cols-8 sm:grid-cols-12 gap-2 max-h-48 overflow-y-auto"
+                ></div>
+                <div id="pinned-quiz-controls" class="mt-3 text-center hidden">
+                  <p class="font-semibold mb-2">
+                    Pinned: <span id="pinned-count">0</span>/20
+                  </p>
+                  <button
+                    id="start-pinned-quiz-btn"
+                    class="bg-yellow-400 text-yellow-900 font-bold py-2 px-6 rounded-lg shadow-md hover:bg-yellow-500 transition-all"
+                  >
+                    Start Pinned Quiz
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- View History Button -->
+          <button
+            id="view-history-btn"
+            class="w-full bg-gray-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-gray-700 transition-all duration-300"
+          >
+            View Quiz History
+          </button>
+          <!-- Word Progress Section -->
+          <div id="word-progress-section" class="pt-4 border-t">
+            <h3 class="font-semibold text-gray-700 mb-2">
+              Surah Mastery Progress (<span id="progress-lang-display"></span>)
+            </h3>
+            <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
+              <div
+                id="mastery-progress-bar"
+                class="bg-blue-600 h-4 rounded-full text-xs text-white text-center leading-none"
+                style="width: 0%"
+              ></div>
+            </div>
+            <h3 class="font-semibold text-gray-700 mb-2">Word Progress</h3>
+            <div class="max-h-64 overflow-y-auto border rounded-lg">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead
+                  id="progress-table-header"
+                  class="bg-gray-50 sticky top-0"
+                >
+                  <tr>
+                    <th
+                      data-sort="number"
+                      class="sortable-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      # <span class="sort-indicator"></span>
+                    </th>
+                    <th
+                      class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Word
+                    </th>
+                    <th
+                      class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Correct
+                    </th>
+                    <th
+                      data-sort="mistakes"
+                      class="sortable-header px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Mistakes <span class="sort-indicator"></span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody
+                  id="word-progress-table-body"
+                  class="bg-white divide-y divide-gray-200"
+                ></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- === QUIZ SCREEN === -->
+      <div id="quiz-screen" class="hidden">
+        <div class="flex justify-between items-center mb-4">
+          <button
+            id="quit-quiz-btn"
+            class="px-4 py-2 font-semibold text-white bg-red-500 rounded-lg shadow-md hover:bg-red-600 transition-all"
+          >
+            Quit
+          </button>
+          <div id="score-display" class="text-lg font-semibold text-blue-600">
+            Score: 0
+          </div>
+        </div>
+        <div
+          class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 relative min-h-[450px] flex flex-col"
+        >
+          <div
+            id="question-count"
+            class="absolute top-4 left-6 text-gray-400 text-sm font-medium"
+          ></div>
+          <div
+            class="text-center mb-6 flex-grow flex flex-col items-center justify-center"
+          >
+            <div
+              id="question-text"
+              class="text-4xl md:text-5xl font-bold text-gray-900"
+            ></div>
+            <div
+              id="english-hint-container"
+              class="text-lg md:text-xl text-gray-600 mt-3 h-8"
+            ></div>
+          </div>
+          <div
+            id="mcq-options"
+            class="grid grid-cols-1 sm:grid-cols-2 gap-4"
+          ></div>
+        </div>
+      </div>
+
+      <!-- === RESULTS SCREEN === -->
+      <div id="results-screen" class="hidden text-center">
+        <div class="bg-white rounded-2xl shadow-lg p-8 sm:p-12">
+          <h1 class="text-4xl font-bold text-gray-800">Quiz Complete!</h1>
+          <p class="text-gray-600 mt-4 text-xl">Your final score is:</p>
+          <div
+            id="final-score"
+            class="text-6xl font-bold text-blue-600 my-6"
+          ></div>
+          <button
+            id="play-again-btn"
+            class="w-full max-w-xs mx-auto bg-green-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300"
+          >
+            Play Again
+          </button>
+        </div>
+      </div>
+
+      <!-- === HISTORY SCREEN === -->
+      <div id="history-screen" class="hidden">
+        <div class="text-center mb-8">
+          <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">
+            Quiz History
+          </h1>
+          <p class="text-gray-600 mt-2">
+            Your last 15 results for
+            <span id="history-quiz-type-display" class="font-bold"></span>
+          </p>
+        </div>
+        <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 space-y-4">
+          <ul id="history-list" class="space-y-3 max-h-96 overflow-y-auto"></ul>
+          <button
+            id="back-to-settings-btn"
+            class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-blue-700 transition-all duration-300 mt-4"
+          >
+            Back to Setup
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- === ACHIEVEMENT POPUP === -->
+    <div
+      id="achievement-popup"
+      class="fixed top-5 right-5 bg-white border-l-4 border-green-500 text-green-800 p-4 rounded-lg shadow-lg hidden transition-transform duration-500 translate-x-full z-50"
+    >
+      <div class="flex items-center">
+        <svg
+          class="w-8 h-8 mr-3 text-green-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          ></path>
+        </svg>
+        <div>
+          <p class="font-bold">Achievement Unlocked!</p>
+          <p id="achievement-message" class="text-sm">
+            You've unlocked a new mode!
+          </p>
+        </div>
+      </div>
+    </div>
+     <script src="./script.js"></script>
+  </body>
+</html>
