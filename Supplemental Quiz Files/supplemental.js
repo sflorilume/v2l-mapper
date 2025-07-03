@@ -1,5 +1,3 @@
-// --- NOTE: 'germanWords' and 'japaneseWords' are loaded from their respective .js files ---
-
 // --- DOM Elements ---
 const settingsScreen = document.getElementById("settings-screen");
 const quizScreen = document.getElementById("quiz-screen");
@@ -11,10 +9,14 @@ const quizModeSelector = document.getElementById("quiz-mode-selector");
 const slider = document.getElementById("random-quiz-slider");
 const sliderValue = document.getElementById("slider-value");
 const progressViewContainer = document.getElementById("progress-view");
+const pinnedQuizControls = document.getElementById("pinned-quiz-controls");
+const pinnedCountEl = document.getElementById("pinned-count");
+const startPinnedQuizBtn = document.getElementById("start-pinned-quiz-btn");
 
 const playAgainBtn = document.getElementById("play-again-btn");
 const quitQuizBtn = document.getElementById("quit-quiz-btn");
 const backToHomeBtn = document.getElementById("back-to-home-btn");
+const backToSettingsBtn = document.getElementById("back-to-settings-btn");
 
 const scoreDisplay = document.getElementById("score-display");
 const questionCountEl = document.getElementById("question-count");
@@ -22,14 +24,10 @@ const questionTextEl = document.getElementById("question-text");
 const mcqOptionsContainer = document.getElementById("mcq-options");
 const finalScoreEl = document.getElementById("final-score");
 const historyListEl = document.getElementById("history-list");
-const wordProgressTableBody = document.getElementById(
-  "word-progress-table-body"
-);
+const wordProgressTableBody = document.getElementById("word-progress-table-body");
 const masteryProgressBar = document.getElementById("mastery-progress-bar");
 const progressLangDisplay = document.getElementById("progress-lang-display");
-const historyQuizTypeDisplay = document.getElementById(
-  "history-quiz-type-display"
-);
+const historyQuizTypeDisplay = document.getElementById("history-quiz-type-display");
 const progressTableHeader = document.getElementById("progress-table-header");
 
 // --- State ---
@@ -43,10 +41,15 @@ let quizState = {
 };
 let sortState = { column: "number", direction: "asc" };
 
+// Pinned Words State
+const PINNED_WORDS_STORAGE_KEY = "supplementalQuizPinnedWords";
+let pinnedWords = JSON.parse(localStorage.getItem(PINNED_WORDS_STORAGE_KEY)) || [];
+
 // --- Functions ---
 
+
 function getActiveWordData() {
-    return quizSettings.quizType.startsWith('de') ? germanWords : japaneseWords;
+  return quizSettings.quizType.includes("de") ? germanWords : japaneseWords;
 }
 
 function generateRubyHTML(jpData) {
@@ -96,7 +99,7 @@ function updateSettings(type, value) {
       const isSelected =
         value === pair ||
         value === `${pair.split("-")[1]}-${pair.split("-")[0]}`;
-        
+
       btn.classList.toggle("bg-blue-100", isSelected);
       btn.classList.toggle("border-blue-500", isSelected);
 
@@ -111,13 +114,12 @@ function updateSettings(type, value) {
         btn.textContent = typeTextMap[`${p2}-${p1}`];
       else btn.textContent = defaultText;
     });
-    
-    slider.max = wordData.length;
-    if(parseInt(slider.value) > wordData.length) {
-        slider.value = wordData.length;
-        sliderValue.textContent = wordData.length;
-    }
 
+    slider.max = wordData.length;
+    if (parseInt(slider.value) > wordData.length) {
+      slider.value = wordData.length;
+      sliderValue.textContent = wordData.length;
+    }
 
     renderWordProgress(value);
     populateProgressView(value);
@@ -127,8 +129,12 @@ function updateSettings(type, value) {
     document.querySelectorAll(".mode-option").forEach((opt) => {
       opt.classList.toggle("mode-active", opt.id === `mode-${value}`);
     });
-    const isSequential = value === "sequential";
-    progressViewContainer.classList.toggle("hidden", !isSequential);
+    // Clear pins if mode is changed
+    if (quizSettings.mode !== "sequential") {
+        pinnedWords = [];
+        localStorage.removeItem(PINNED_WORDS_STORAGE_KEY);
+    }
+    updatePinnedUI();
   }
 }
 
@@ -157,21 +163,64 @@ function populateProgressView(type) {
       else if (ratio >= 0.25) colorClass = "bg-orange-200 border-orange-400";
       else colorClass = "bg-red-200 border-red-400";
     }
-
+    
     button.className = `progress-word-btn h-10 w-10 flex items-center justify-center rounded-md border-2 font-semibold transition-all ${colorClass}`;
-    button.addEventListener("click", (e) => startQuiz({ startIndex: index }));
+    
+    if (pinnedWords.includes(index)) {
+      button.classList.add("word-pinned");
+    }
+
+    button.addEventListener("click", handleSequentialClick);
     progressViewContainer.appendChild(button);
   });
+  updatePinnedUI();
+}
+
+// --- Pinned Words Functions ---
+function handleSequentialClick(e) {
+  const button = e.currentTarget;
+  const index = parseInt(button.dataset.index);
+  togglePin(index, button);
+}
+
+function togglePin(index, buttonEl) {
+  const pinIndex = pinnedWords.indexOf(index);
+  if (pinIndex > -1) {
+    pinnedWords.splice(pinIndex, 1); // Unpin
+    buttonEl.classList.remove("word-pinned");
+  } else {
+    if (pinnedWords.length < 20) {
+      pinnedWords.push(index); // Pin
+      buttonEl.classList.add("word-pinned");
+    } else {
+      alert("You can only pin up to 20 words.");
+    }
+  }
+  localStorage.setItem(PINNED_WORDS_STORAGE_KEY, JSON.stringify(pinnedWords));
+  updatePinnedUI();
+}
+
+function updatePinnedUI() {
+  if (quizSettings.mode === "sequential") {
+    pinnedCountEl.textContent = `${pinnedWords.length}`;
+    pinnedQuizControls.classList.toggle("hidden", pinnedWords.length === 0);
+    document.querySelectorAll('.progress-word-btn').forEach(btn => {
+        const index = parseInt(btn.dataset.index);
+        btn.classList.toggle('word-pinned', pinnedWords.includes(index));
+    });
+  } else {
+    pinnedQuizControls.classList.add("hidden");
+  }
 }
 
 function renderWordProgress(type) {
   const typeText =
     document.querySelector(`[data-type-pair="${quizSettings.quizType}"]`)?.textContent ||
     document.querySelector(
-        `[data-type-pair="${quizSettings.quizType.split("-").reverse().join("-")}"]`
+      `[data-type-pair="${quizSettings.quizType.split("-").reverse().join("-")}"]`
     )?.textContent ||
     "...";
-    
+
   if (!type) {
     wordProgressTableBody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-gray-500">Select a quiz type to see progress.</td></tr>`;
     masteryProgressBar.style.width = "0%";
@@ -179,7 +228,7 @@ function renderWordProgress(type) {
     progressLangDisplay.textContent = "...";
     return;
   }
-  
+
   progressLangDisplay.textContent = typeText;
   const progress = getWordProgress(type);
   const currentWordData = getActiveWordData();
@@ -187,32 +236,20 @@ function renderWordProgress(type) {
 
   let displayData = currentWordData.map((word, index) => {
     const stats = progress[index] || { correct: 0, incorrect: 0 };
-    return {
-      ...word,
-      index,
-      correct: stats.correct,
-      incorrect: stats.incorrect,
-    };
+    return { ...word, index, correct: stats.correct, incorrect: stats.incorrect };
   });
-  
+
   displayData.sort((a, b) => {
     const dir = sortState.direction === "asc" ? 1 : -1;
     if (sortState.column === "number") return (a.index - b.index) * dir;
-    if (sortState.column === "mistakes")
-      return (a.incorrect - b.incorrect) * dir;
+    if (sortState.column === "mistakes") return (a.incorrect - b.incorrect) * dir;
     return 0;
   });
 
   wordProgressTableBody.innerHTML = "";
   displayData.forEach((word) => {
     const row = document.createElement("tr");
-    let questionText;
-    if(typeof word.question === 'string') {
-        questionText = word.question;
-    } else {
-        questionText = generateRubyHTML(word.question);
-    }
-
+    let questionText = typeof word.question === 'string' ? word.question : generateRubyHTML(word.question);
     row.innerHTML = `
         <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${word.index + 1}</td>
         <td class="px-4 py-2 whitespace-nowrap text-lg">${questionText}</td>
@@ -224,40 +261,29 @@ function renderWordProgress(type) {
 
   currentWordData.forEach((_, index) => {
     const stats = progress[index] || { correct: 0, incorrect: 0 };
-    const totalAttempts = stats.correct + stats.incorrect;
-    if (totalAttempts > 0 && stats.correct / totalAttempts >= 0.8)
-      masteredWords++;
+    if (stats.correct > 0) masteredWords++;
   });
 
-  const masteryPercent =
-    currentWordData.length > 0 ? (masteredWords / currentWordData.length) * 100 : 0;
+  const masteryPercent = currentWordData.length > 0 ? (masteredWords / currentWordData.length) * 100 : 0;
   masteryProgressBar.style.width = `${masteryPercent}%`;
   masteryProgressBar.textContent = `${masteryPercent.toFixed(0)}%`;
 
-  document
-    .querySelectorAll(".sort-indicator")
-    .forEach((el) => (el.textContent = ""));
-  const activeHeader = document.querySelector(
-    `th[data-sort="${sortState.column}"] .sort-indicator`
-  );
-  if (activeHeader)
-    activeHeader.textContent = sortState.direction === "asc" ? " ▲" : " ▼";
+  document.querySelectorAll(".sort-indicator").forEach((el) => (el.textContent = ""));
+  const activeHeader = document.querySelector(`th[data-sort="${sortState.column}"] .sort-indicator`);
+  if (activeHeader) activeHeader.textContent = sortState.direction === "asc" ? " ▲" : " ▼";
 }
 
-function startQuiz({ startIndex, numQuestions }) {
+function startQuiz({ numQuestions, customQuestions }) {
   if (!quizSettings.quizType) {
     alert("Please select a quiz type first!");
     return;
   }
-  
   wordData = getActiveWordData();
 
-  if (quizSettings.mode === "random") {
-    quizState.questions = [...wordData]
-      .sort(() => 0.5 - Math.random())
-      .slice(0, numQuestions);
-  } else { // sequential
-    quizState.questions = wordData.slice(startIndex);
+  if (customQuestions) {
+    quizState.questions = [...customQuestions].sort(() => 0.5 - Math.random());
+  } else if (quizSettings.mode === "random") {
+    quizState.questions = [...wordData].sort(() => 0.5 - Math.random()).slice(0, numQuestions);
   }
 
   if (quizState.questions.length === 0) return;
@@ -278,21 +304,17 @@ function renderQuestion() {
   const currentWord = quizState.questions[quizState.currentQuestionIndex];
   const [qLang, aLang] = quizSettings.quizType.split("-");
 
-  // Determine question and answer values
   const questionValue = qLang === 'en' ? currentWord.answer : currentWord.question;
-  const answerValue = aLang === 'en' ? currentWord.answer : currentWord.question;
   
-  // Display question
-  questionTextEl.className = "font-bold text-gray-900"; // Reset
+  questionTextEl.className = "font-bold text-gray-900";
   if (typeof questionValue === 'string') {
-      questionTextEl.innerHTML = `<span>${questionValue}</span>`;
-      questionTextEl.classList.add("text-4xl", "md:text-5xl");
-  } else { // Japanese with furigana
-      questionTextEl.innerHTML = generateRubyHTML(questionValue);
-      questionTextEl.classList.add("text-4xl", "md:text-5xl");
+    questionTextEl.innerHTML = `<span>${questionValue}</span>`;
+    questionTextEl.classList.add("text-4xl", "md:text-5xl");
+  } else {
+    questionTextEl.innerHTML = generateRubyHTML(questionValue);
+    questionTextEl.classList.add("text-4xl", "md:text-5xl");
   }
 
-  // Generate options
   let distractors = [];
   while (distractors.length < 3) {
     const randomWord = wordData[Math.floor(Math.random() * wordData.length)];
@@ -309,29 +331,30 @@ function renderQuestion() {
     const button = document.createElement("button");
     button.className = "mcq-option p-4 rounded-lg border-2 text-center font-semibold transition-all duration-200 hover:bg-gray-100 flex items-center justify-center min-h-[4rem]";
     button.dataset.correct = isCorrect;
-    
+
     const optionValue = aLang === 'en' ? option.answer : option.question;
 
     if (typeof optionValue === 'string') {
-        button.innerHTML = `<span class="text-lg">${optionValue}</span>`;
-    } else { // Japanese with furigana
-        button.innerHTML = `<span class="text-lg">${generateRubyHTML(optionValue)}</span>`;
+      button.innerHTML = `<span class="text-lg">${optionValue}</span>`;
+    } else {
+      button.innerHTML = `<span class="text-lg">${generateRubyHTML(optionValue)}</span>`;
     }
-    
+
     button.addEventListener("click", handleAnswer);
     mcqOptionsContainer.appendChild(button);
   });
 }
 
+// --- handleAnswer Updated with Feedback ---
 function handleAnswer(e) {
   if (quizState.answered) return;
   quizState.answered = true;
-  const isCorrect = e.currentTarget.dataset.correct === "true";
+  
+  const selectedButton = e.currentTarget;
+  const isCorrect = selectedButton.dataset.correct === "true";
 
   const currentQuestion = quizState.questions[quizState.currentQuestionIndex];
-  const wordIndex = wordData.findIndex(
-    (w) => w.answer === currentQuestion.answer
-  );
+  const wordIndex = wordData.findIndex((w) => w.answer === currentQuestion.answer);
 
   updateWordProgress(wordIndex, isCorrect, quizSettings.quizType);
 
@@ -340,14 +363,17 @@ function handleAnswer(e) {
     updateScoreDisplay();
   }
 
+  // Visual Feedback
   document.querySelectorAll(".mcq-option").forEach((btn) => {
-    btn.disabled = true;
+    btn.disabled = true; // Prevent further clicks
     if (btn.dataset.correct === "true") {
-      btn.classList.add("correct-answer");
-    } else {
-      btn.classList.add("wrong-answer");
+      btn.classList.add("correct-answer"); // Always show the correct answer in green
     }
   });
+
+  if (!isCorrect) {
+    selectedButton.classList.add("wrong-answer"); // Show the user's wrong choice in red
+  }
 
   setTimeout(() => {
     if (quizState.currentQuestionIndex < quizState.questions.length - 1) {
@@ -356,11 +382,11 @@ function handleAnswer(e) {
     } else {
       showResults();
     }
-  }, 1200);
+  }, 1200); // Increased timeout to see feedback
 }
 
 function updateScoreDisplay() {
-    scoreDisplay.textContent = `Score: ${quizState.score}`;
+  scoreDisplay.textContent = `Score: ${quizState.score}`;
 }
 
 function showResults() {
@@ -373,25 +399,11 @@ function showResults() {
 
 function saveResultToHistory(scoreText) {
   const type = quizSettings.quizType;
-  const history =
-    JSON.parse(localStorage.getItem(`supplementalQuizHistory_${type}`)) || [];
-  
-  const typeText =
-    document.querySelector(`button[data-type-pair="${type}"]`)?.textContent ||
-    document.querySelector(
-      `button[data-type-pair="${type.split("-").reverse().join("-")}"]`
-    )?.textContent || "N/A";
-
-  const newResult = {
-    score: scoreText,
-    date: new Date().toLocaleString(),
-    type: typeText,
-  };
+  const history = JSON.parse(localStorage.getItem(`supplementalQuizHistory_${type}`)) || [];
+  const typeText = document.querySelector(`button[data-type-pair="${type}"]`)?.textContent || document.querySelector(`button[data-type-pair="${type.split("-").reverse().join("-")}"]`)?.textContent || "N/A";
+  const newResult = { score: scoreText, date: new Date().toLocaleString(), type: typeText };
   history.unshift(newResult);
-  localStorage.setItem(
-    `supplementalQuizHistory_${type}`,
-    JSON.stringify(history.slice(0, 15)) // Keep last 15 results
-  );
+  localStorage.setItem(`supplementalQuizHistory_${type}`, JSON.stringify(history.slice(0, 15)));
 }
 
 function renderHistory() {
@@ -400,18 +412,12 @@ function renderHistory() {
     return;
   }
   const type = quizSettings.quizType;
-  const typeText =
-    document.querySelector(`button[data-type-pair="${type}"]`)?.textContent ||
-    document.querySelector(
-      `button[data-type-pair="${type.split("-").reverse().join("-")}"]`
-    )?.textContent;
-    
+  const typeText = document.querySelector(`button[data-type-pair="${type}"]`)?.textContent || document.querySelector(`button[data-type-pair="${type.split("-").reverse().join("-")}"]`)?.textContent;
   historyQuizTypeDisplay.textContent = typeText;
   settingsScreen.classList.add("hidden");
   historyScreen.classList.remove("hidden");
-  
-  const history =
-    JSON.parse(localStorage.getItem(`supplementalQuizHistory_${type}`)) || [];
+
+  const history = JSON.parse(localStorage.getItem(`supplementalQuizHistory_${type}`)) || [];
   historyListEl.innerHTML = "";
 
   if (history.length === 0) {
@@ -421,8 +427,7 @@ function renderHistory() {
 
   history.forEach((result) => {
     const li = document.createElement("li");
-    li.className =
-      "p-4 bg-gray-50 rounded-lg border flex justify-between items-center";
+    li.className = "p-4 bg-gray-50 rounded-lg border flex justify-between items-center";
     li.innerHTML = `<div><p class="font-bold text-lg text-gray-800">${result.score}</p></div><p class="text-xs text-gray-400">${result.date}</p>`;
     historyListEl.appendChild(li);
   });
@@ -434,25 +439,17 @@ function resetAppView() {
   historyScreen.classList.add("hidden");
   settingsScreen.classList.remove("hidden");
   
-  renderWordProgress(quizSettings.quizType);
-  populateProgressView(quizSettings.quizType);
+  updateSettings("quizType", quizSettings.quizType); // Refresh views
+  updateSettings("mode", quizSettings.mode);
 }
 
 // --- Event Listeners ---
 quizTypeSelector.addEventListener("click", (e) => {
   const button = e.target.closest(".type-option");
   if (!button) return;
-
   const pair = button.dataset.typePair;
   const [p1, p2] = pair.split("-");
-  const currentType = quizSettings.quizType;
-  
-  // Simple reverse on click
-  if (currentType === pair) {
-    updateSettings("quizType", `${p2}-${p1}`);
-  } else {
-    updateSettings("quizType", pair);
-  }
+  updateSettings("quizType", quizSettings.quizType === pair ? `${p2}-${p1}` : pair);
 });
 
 quizModeSelector.addEventListener("click", (e) => {
@@ -462,15 +459,10 @@ quizModeSelector.addEventListener("click", (e) => {
   }
 });
 
-slider.addEventListener("input", (e) => {
-  sliderValue.textContent = e.target.value;
-});
-
+slider.addEventListener("input", (e) => { sliderValue.textContent = e.target.value; });
 slider.addEventListener("mouseup", (e) => {
-  if (quizSettings.mode === "random")
-    startQuiz({ numQuestions: parseInt(e.target.value) });
+  if (quizSettings.mode === "random") startQuiz({ numQuestions: parseInt(e.target.value) });
 });
-
 
 progressTableHeader.addEventListener("click", (e) => {
   const header = e.target.closest(".sortable-header");
@@ -485,27 +477,25 @@ progressTableHeader.addEventListener("click", (e) => {
   renderWordProgress(quizSettings.quizType);
 });
 
+startPinnedQuizBtn.addEventListener("click", () => {
+  if (pinnedWords.length > 0) {
+    const customQuestions = pinnedWords.map((index) => wordData[index]);
+    startQuiz({ customQuestions });
+  }
+});
+
+// Navigation button listeners
 playAgainBtn.addEventListener("click", resetAppView);
-quitQuizBtn.addEventListener("click", () => {
-    window.location.href = 'index.html';
-});
-backToHomeBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    resetAppView();
-});
+backToSettingsBtn.addEventListener("click", resetAppView);
+backToHomeBtn.addEventListener("click", resetAppView);
+quitQuizBtn.addEventListener("click", () => { window.location.href = '../index.html'; });
 
 // --- Initial Load ---
-document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const view = urlParams.get('view');
-
-    // Set a default type and mode on initial load
-    updateSettings("quizType", "de-en"); 
-    updateSettings("mode", "random");
-
-    if (view === 'history') {
-        renderHistory();
-    } else {
-        resetAppView();
-    }
+document.addEventListener("DOMContentLoaded", () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const view = urlParams.get("view");
+  updateSettings("quizType", "de-en");
+  updateSettings("mode", "random");
+  if (view === "history") { renderHistory(); } 
+  else { resetAppView(); }
 });

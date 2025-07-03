@@ -27,18 +27,25 @@ body {
   border-color: #3b82f6;
 }
 
+/* .word-pinned {
+  background-color: #fef08a !important;
+  border-color: #facc15 !important;
+} */
+
 /* Styling for ruby text to ensure proper alignment */
 ruby {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  line-height: 1.1;
+  line-height: 1.4rem;
 }
 
 rt {
-  font-size: 0.65rem;
+  font-size: 1rem;
   opacity: 0.9;
   line-height: 1;
+  margin-top: 0.1rem;
+
 }
 
 .sortable-header {
@@ -47,4 +54,52 @@ rt {
 
 .sortable-header:hover {
   background-color: #f9fafb;
+}
+
+.popup-visible {
+  transform: translateX(0) !important;
+}
+
+/* This makes the container a reference for the absolute positioning of the back-link */
+#app-container {
+  position: relative;
+}
+
+/* New Style for the Back Button */
+.back-link {
+  position: absolute;
+  top: 1.5rem;
+  left: 0rem;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #4B5563; /* text-gray-600 */
+  text-decoration: none;
+  transition: color 0.2s ease-in-out;
+  z-index: 10; /* Ensures it's above other elements */
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.5); /* Optional: slight background for visibility */
+  backdrop-filter: blur(2px); /* Optional: cool glass effect */
+}
+
+.back-link:hover {
+  color: #1D4ED8; /* text-blue-700 */
+}
+
+/* These are the styles for the quiz feedback, if you don't already have them */
+.correct-answer {
+  background-color: #33ce7e !important; /* Green-100 */
+  border-color: #10B981 !important; /* Green-500 */
+}
+
+.wrong-answer {
+  background-color: #e76e6e !important; /* Red-100 */
+  border-color: #cf5252 !important; /* Red-500 */
+}
+
+.word-pinned {
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.7); /* Yellow-400 with opacity */
+  border-color: #f59e0b; /* Amber-500 */
 }

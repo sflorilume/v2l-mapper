@@ -54,6 +54,7 @@ let pinnedWords =
 
 // --- Functions ---
 
+
 function generateRubyHTML(jpData) {
   if (!Array.isArray(jpData)) return `<span>${jpData}</span>`;
   return jpData
@@ -693,7 +694,7 @@ startPinnedQuizBtn.addEventListener("click", () => {
 
 playAgainBtn.addEventListener("click", resetAppView);
 quitQuizBtn.addEventListener("click", () => {
-    window.location.href = 'index.html';
+    window.location.href = '../index.html';
 });
 
 // --- Initial Load ---
