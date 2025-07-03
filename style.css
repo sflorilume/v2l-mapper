@@ -1,0 +1,50 @@
+.font-arabic {
+  font-family: 'Amiri', 'Noto Naskh Arabic', serif;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.correct-answer {
+  background-color: #22c55e !important;
+  color: white !important;
+  border-color: #16a34a !important;
+}
+
+.wrong-answer {
+  background-color: #ef4444 !important;
+  color: white !important;
+  border-color: #dc2626 !important;
+}
+
+.no-pointer-events {
+  pointer-events: none;
+}
+
+.mode-active {
+  background-color: #eff6ff;
+  border-color: #3b82f6;
+}
+
+/* Styling for ruby text to ensure proper alignment */
+ruby {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+rt {
+  font-size: 0.65rem;
+  opacity: 0.9;
+  line-height: 1;
+}
+
+.sortable-header {
+  cursor: pointer;
+}
+
+.sortable-header:hover {
+  background-color: #f9fafb;
+}
