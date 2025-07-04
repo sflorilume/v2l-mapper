@@ -49,7 +49,15 @@ let pinnedWords = JSON.parse(localStorage.getItem(PINNED_WORDS_STORAGE_KEY)) || 
 
 
 function getActiveWordData() {
-  return quizSettings.quizType.includes("de") ? germanWords : japaneseWords;
+  if (quizSettings.quizType.includes("de")) {
+    return germanWords;
+  } else if (quizSettings.quizType.includes("jp")) {
+    return japaneseWords;
+  } else if (quizSettings.quizType.includes("ar")) {
+    return arabicWords;
+  }
+  // Default fallback
+  return germanWords;
 }
 
 function generateRubyHTML(jpData) {
@@ -87,11 +95,14 @@ function updateSettings(type, value) {
   wordData = getActiveWordData();
 
   if (type === "quizType") {
+    // Add Arabic to the text map
     const typeTextMap = {
       "de-en": "German → English",
       "en-de": "English → German",
       "jp-en": "Japanese → English",
       "en-jp": "English → Japanese",
+      "ar-en": "Arabic → English",
+      "en-ar": "English → Arabic",
     };
 
     document.querySelectorAll(".type-option").forEach((btn) => {
@@ -104,10 +115,12 @@ function updateSettings(type, value) {
       btn.classList.toggle("border-blue-500", isSelected);
 
       const [p1, p2] = pair.split("-");
+      // Add Arabic to the replacement logic
       const defaultText = `${p1.toUpperCase()} ↔ ${p2.toUpperCase()}`
         .replace("DE", "German")
         .replace("EN", "English")
-        .replace("JP", "Japanese");
+        .replace("JP", "Japanese")
+        .replace("AR", "Arabic");
 
       if (value === pair) btn.textContent = typeTextMap[pair];
       else if (value === `${p2}-${p1}`)
@@ -382,7 +395,7 @@ function handleAnswer(e) {
     } else {
       showResults();
     }
-  }, 1200); // Increased timeout to see feedback
+  }, 500); // Increased timeout to see feedback
 }
 
 function updateScoreDisplay() {

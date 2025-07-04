@@ -14,41 +14,64 @@
     <link rel="stylesheet" href="../style.css" />
     <script src="./german-words.js"></script>
     <script src="./japanese-words.js"></script>
+    <script src="./arabic-words.js"></script>
   </head>
   <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
     <div id="app-container" class="w-full max-w-3xl mx-auto">
-        <a href="../index.html" class="back-link">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+      <a href="../index.html" class="back-link">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 mr-1"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+            clip-rule="evenodd"
+          />
         </svg>
         Home
       </a>
 
-
       <div id="settings-screen">
         <div class="text-center mb-8">
-          <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 pt-12 sm:pt-0"> Supplemental Quiz Setup
+          <h1
+            class="text-3xl sm:text-4xl font-bold text-gray-800 pt-12 sm:pt-0"
+          >
+            Supplemental Quiz Setup
           </h1>
         </div>
-        
+
         <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 space-y-6">
           <div>
             <label class="font-semibold text-gray-700"
               >1. Choose Quiz Type (Click active button to reverse):</label
             >
             <div id="quiz-type-selector" class="mt-2 grid grid-cols-2 gap-4">
+              
               <button
                 data-type-pair="de-en"
                 class="type-option w-full p-4 rounded-lg border-2 font-semibold transition-all text-center"
               >
                 German ↔ English
               </button>
+
               <button
                 data-type-pair="jp-en"
                 class="type-option w-full p-4 rounded-lg border-2 font-semibold transition-all text-center"
               >
                 Japanese ↔ English
               </button>
+
+              <button
+                data-type-pair="ar-en"
+                class="type-option w-full p-4 rounded-lg border-2 font-semibold transition-all text-center md:col-span-3"
+              >
+              <!-- md:col-span-3 ini yang nyebabin dia take space 3 -->
+                Arabic ↔ English
+              </button>
+
             </div>
           </div>
           <div id="quiz-mode-container">
@@ -169,7 +192,11 @@
           >
             Quit
           </button>
-          <div id="score-display" style="position: absolute; right: 0;" class="text-lg font-semibold text-blue-600 text-right">
+          <div
+            id="score-display"
+            style="position: absolute; right: 0"
+            class="text-lg font-semibold text-blue-600 text-right"
+          >
             Score: 0
           </div>
         </div>
