@@ -56,6 +56,14 @@ function getNormalizedQuizType(type) {
   return parts.sort().join('-');
 }
 
+function getTodayDateString() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function generateRubyHTML(jpData) {
   if (!Array.isArray(jpData)) return `<span>${jpData}</span>`;
   return jpData
@@ -78,7 +86,10 @@ function getWordProgress(type) {
 function updateWordProgress(wordIndex, isCorrect, type) {
   if (type === "chaos") return; // Do not track progress for chaos mode
   const normalizedType = getNormalizedQuizType(type);
-  const progress = getWordProgress(normalizedType); // Use normalized type here too
+  const progress = getWordProgress(normalizedType);
+  
+  const wasAlreadyCorrect = progress[wordIndex] && progress[wordIndex].correct > 0;
+
   if (!progress[wordIndex]) {
     progress[wordIndex] = { correct: 0, incorrect: 0 };
   }
@@ -87,6 +98,21 @@ function updateWordProgress(wordIndex, isCorrect, type) {
     `quranQuizWordProgress_${normalizedType}`,
     JSON.stringify(progress)
   );
+
+  // If the word was answered correctly for the first time, log it as a daily achievement
+  if (isCorrect && !wasAlreadyCorrect) {
+    const today = getTodayDateString();
+    const dailyProgressKey = `quranQuizDailyProgress_${normalizedType}`;
+    const dailyProgress = JSON.parse(localStorage.getItem(dailyProgressKey)) || {};
+    
+    if (!dailyProgress[today]) {
+      dailyProgress[today] = [];
+    }
+    if (!dailyProgress[today].includes(wordIndex)) {
+      dailyProgress[today].push(wordIndex);
+    }
+    localStorage.setItem(dailyProgressKey, JSON.stringify(dailyProgress));
+  }
 }
 
 function getModeMastery(type) {
@@ -569,31 +595,7 @@ function showResults() {
   resultsScreen.classList.remove("hidden");
   const finalScoreText = `${quizState.score} / ${quizState.questions.length}`;
   finalScoreEl.textContent = finalScoreText;
-  saveResultToHistory(finalScoreText);
-}
 
-function saveResultToHistory(scoreText) {
-  const type = quizSettings.quizType;
-  if (type === "chaos") return;
-  const normalizedType = getNormalizedQuizType(type);
-  const history =
-    JSON.parse(localStorage.getItem(`quranQuizHistory_${normalizedType}`)) || [];
-  const typeText =
-    document.querySelector(`button[data-type-pair="${type}"]`)?.textContent ||
-    document.querySelector(
-      `button[data-type-pair="${type.split("-").reverse().join("-")}"]`
-    )?.textContent ||
-    "N/A";
-  const newResult = {
-    score: scoreText,
-    date: new Date().toLocaleString(),
-    type: typeText,
-  };
-  history.unshift(newResult);
-  localStorage.setItem(
-    `quranQuizHistory_${normalizedType}`,
-    JSON.stringify(history.slice(0, 15))
-  );
 }
 
 function renderHistory() {
@@ -612,23 +614,37 @@ function renderHistory() {
   
   settingsScreen.classList.add("hidden");
   historyScreen.classList.remove("hidden");
+  
+  const dailyProgressKey = `quranQuizDailyProgress_${normalizedType}`;
+  const dailyProgress = JSON.parse(localStorage.getItem(dailyProgressKey)) || {};
+  let totalWords = 0;
+  let listHTML = "";
 
-  const history =
-    JSON.parse(localStorage.getItem(`quranQuizHistory_${normalizedType}`)) || [];
-  historyListEl.innerHTML = "";
+  for (let i = 0; i < 15; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const dateString = `${yyyy}-${mm}-${dd}`;
 
-  if (history.length === 0) {
-    historyListEl.innerHTML = `<li class="text-center text-gray-500">No history found for this quiz type.</li>`;
-    return;
+    const wordsMemorized = dailyProgress[dateString]?.length || 0;
+    totalWords += wordsMemorized;
+
+    const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    
+    listHTML += `
+      <li class="p-3 bg-gray-50 rounded-lg flex justify-between items-center text-sm">
+        <span class="font-medium text-gray-700">${formattedDate} ${i === 0 ? '<span class="text-blue-500 font-bold">(Today)</span>' : ''}</span>
+        <span class="font-bold text-lg ${wordsMemorized > 0 ? 'text-green-600' : 'text-gray-400'}">${wordsMemorized} words</span>
+      </li>
+    `;
   }
 
-  history.forEach((result) => {
-    const li = document.createElement("li");
-    li.className =
-      "p-4 bg-gray-50 rounded-lg border flex justify-between items-center";
-    li.innerHTML = `<div><p class="font-bold text-lg text-gray-800">${result.score}</p></div><p class="text-xs text-gray-400">${result.date}</p>`;
-    historyListEl.appendChild(li);
-  });
+  const average = (totalWords / 15).toFixed(1);
+  document.getElementById("history-average").textContent = average;
+  historyListEl.innerHTML = listHTML;
 }
 
 function resetAppView() {
