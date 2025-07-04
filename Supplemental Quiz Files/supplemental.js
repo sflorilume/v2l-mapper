@@ -41,12 +41,17 @@ let quizState = {
 };
 let sortState = { column: "number", direction: "asc" };
 
-// Pinned Words State
-const PINNED_WORDS_STORAGE_KEY = "supplementalQuizPinnedWords";
-let pinnedWords = JSON.parse(localStorage.getItem(PINNED_WORDS_STORAGE_KEY)) || [];
+// Pinned Words State for language --causing redundancy
+// const PINNED_WORDS_STORAGE_KEY = "supplementalQuizPinnedWords";
+// let pinnedWords = JSON.parse(localStorage.getItem(PINNED_WORDS_STORAGE_KEY)) || [];
+// ADD THIS LINE
+let pinnedWords = []; // we simplify this
 
 // --- Functions ---
-
+function getNormalizedQuizType(type) {
+  const parts = type.split('-');
+  return parts.sort().join('-');
+}
 
 function getActiveWordData() {
   if (quizSettings.quizType.includes("de")) {
@@ -73,19 +78,21 @@ function generateRubyHTML(jpData) {
 
 function getWordProgress(type) {
   if (!type) return {};
+  const normalizedType = getNormalizedQuizType(type);
   return (
-    JSON.parse(localStorage.getItem(`supplementalQuizWordProgress_${type}`)) || {}
+    JSON.parse(localStorage.getItem(`supplementalQuizWordProgress_${normalizedType}`)) || {}
   );
 }
 
 function updateWordProgress(wordIndex, isCorrect, type) {
-  const progress = getWordProgress(type);
+  const normalizedType = getNormalizedQuizType(type);
+  const progress = getWordProgress(normalizedType);
   if (!progress[wordIndex]) {
     progress[wordIndex] = { correct: 0, incorrect: 0 };
   }
   isCorrect ? progress[wordIndex].correct++ : progress[wordIndex].incorrect++;
   localStorage.setItem(
-    `supplementalQuizWordProgress_${type}`,
+    `supplementalQuizWordProgress_${normalizedType}`,
     JSON.stringify(progress)
   );
 }
@@ -95,7 +102,11 @@ function updateSettings(type, value) {
   wordData = getActiveWordData();
 
   if (type === "quizType") {
-    // Add Arabic to the text map
+    // Load the correct pinned words for the new language
+    const normalizedType = getNormalizedQuizType(value);
+    const key = `supplementalQuizPinnedWords_${normalizedType}`;
+    pinnedWords = JSON.parse(localStorage.getItem(key)) || [];
+
     const typeTextMap = {
       "de-en": "German → English",
       "en-de": "English → German",
@@ -115,7 +126,6 @@ function updateSettings(type, value) {
       btn.classList.toggle("border-blue-500", isSelected);
 
       const [p1, p2] = pair.split("-");
-      // Add Arabic to the replacement logic
       const defaultText = `${p1.toUpperCase()} ↔ ${p2.toUpperCase()}`
         .replace("DE", "German")
         .replace("EN", "English")
@@ -135,17 +145,19 @@ function updateSettings(type, value) {
     }
 
     renderWordProgress(value);
-    populateProgressView(value);
+    populateProgressView(value); // This will now use the correctly loaded pinnedWords
   }
 
   if (type === "mode") {
     document.querySelectorAll(".mode-option").forEach((opt) => {
       opt.classList.toggle("mode-active", opt.id === `mode-${value}`);
     });
-    // Clear pins if mode is changed
+    // Clear pins for the current language if mode is changed away from sequential
     if (quizSettings.mode !== "sequential") {
         pinnedWords = [];
-        localStorage.removeItem(PINNED_WORDS_STORAGE_KEY);
+        const normalizedType = getNormalizedQuizType(quizSettings.quizType);
+        const key = `supplementalQuizPinnedWords_${normalizedType}`;
+        localStorage.removeItem(key);
     }
     updatePinnedUI();
   }
@@ -189,7 +201,6 @@ function populateProgressView(type) {
   updatePinnedUI();
 }
 
-// --- Pinned Words Functions ---
 function handleSequentialClick(e) {
   const button = e.currentTarget;
   const index = parseInt(button.dataset.index);
@@ -209,7 +220,12 @@ function togglePin(index, buttonEl) {
       alert("You can only pin up to 20 words.");
     }
   }
-  localStorage.setItem(PINNED_WORDS_STORAGE_KEY, JSON.stringify(pinnedWords));
+  
+  // Save to a dynamic, normalized key
+  const normalizedType = getNormalizedQuizType(quizSettings.quizType);
+  const key = `supplementalQuizPinnedWords_${normalizedType}`;
+  localStorage.setItem(key, JSON.stringify(pinnedWords));
+  
   updatePinnedUI();
 }
 
@@ -262,7 +278,12 @@ function renderWordProgress(type) {
   wordProgressTableBody.innerHTML = "";
   displayData.forEach((word) => {
     const row = document.createElement("tr");
-    let questionText = typeof word.question === 'string' ? word.question : generateRubyHTML(word.question);
+    let questionText;
+    if (quizSettings.quizType.includes('jp') && typeof word.question === 'object') {
+        questionText = generateRubyHTML(word.question);
+    } else {
+        questionText = word.question;
+    }
     row.innerHTML = `
         <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${word.index + 1}</td>
         <td class="px-4 py-2 whitespace-nowrap text-lg">${questionText}</td>
@@ -299,7 +320,11 @@ function startQuiz({ numQuestions, customQuestions }) {
     quizState.questions = [...wordData].sort(() => 0.5 - Math.random()).slice(0, numQuestions);
   }
 
-  if (quizState.questions.length === 0) return;
+  if (quizState.questions.length === 0) {
+    alert("No questions to start. Please select a valid mode.");
+    return;
+  }
+  
   quizState.currentQuestionIndex = 0;
   quizState.score = 0;
 
@@ -320,14 +345,18 @@ function renderQuestion() {
   const questionValue = qLang === 'en' ? currentWord.answer : currentWord.question;
   
   questionTextEl.className = "font-bold text-gray-900";
-  if (typeof questionValue === 'string') {
-    questionTextEl.innerHTML = `<span>${questionValue}</span>`;
-    questionTextEl.classList.add("text-4xl", "md:text-5xl");
+  if (qLang === 'ar') {
+    questionTextEl.classList.add("font-arabic", "text-6xl", "md:text-7xl");
   } else {
-    questionTextEl.innerHTML = generateRubyHTML(questionValue);
     questionTextEl.classList.add("text-4xl", "md:text-5xl");
   }
 
+  if (qLang === 'jp' && typeof questionValue === 'object') {
+    questionTextEl.innerHTML = generateRubyHTML(questionValue);
+  } else {
+    questionTextEl.innerHTML = `<span>${questionValue}</span>`;
+  }
+  
   let distractors = [];
   while (distractors.length < 3) {
     const randomWord = wordData[Math.floor(Math.random() * wordData.length)];
@@ -347,10 +376,12 @@ function renderQuestion() {
 
     const optionValue = aLang === 'en' ? option.answer : option.question;
 
-    if (typeof optionValue === 'string') {
-      button.innerHTML = `<span class="text-lg">${optionValue}</span>`;
+    if (aLang === 'ar') {
+        button.innerHTML = `<span class="font-arabic text-2xl">${optionValue}</span>`;
+    } else if (aLang === 'jp' && typeof optionValue === 'object') {
+        button.innerHTML = `<span class="text-lg">${generateRubyHTML(optionValue)}</span>`;
     } else {
-      button.innerHTML = `<span class="text-lg">${generateRubyHTML(optionValue)}</span>`;
+        button.innerHTML = `<span class="text-lg">${optionValue}</span>`;
     }
 
     button.addEventListener("click", handleAnswer);
@@ -358,7 +389,6 @@ function renderQuestion() {
   });
 }
 
-// --- handleAnswer Updated with Feedback ---
 function handleAnswer(e) {
   if (quizState.answered) return;
   quizState.answered = true;
@@ -376,16 +406,15 @@ function handleAnswer(e) {
     updateScoreDisplay();
   }
 
-  // Visual Feedback
   document.querySelectorAll(".mcq-option").forEach((btn) => {
-    btn.disabled = true; // Prevent further clicks
+    btn.disabled = true;
     if (btn.dataset.correct === "true") {
-      btn.classList.add("correct-answer"); // Always show the correct answer in green
+      btn.classList.add("correct-answer");
     }
   });
 
   if (!isCorrect) {
-    selectedButton.classList.add("wrong-answer"); // Show the user's wrong choice in red
+    selectedButton.classList.add("wrong-answer");
   }
 
   setTimeout(() => {
@@ -395,7 +424,7 @@ function handleAnswer(e) {
     } else {
       showResults();
     }
-  }, 500); // Increased timeout to see feedback
+  }, 600);
 }
 
 function updateScoreDisplay() {
@@ -412,25 +441,28 @@ function showResults() {
 
 function saveResultToHistory(scoreText) {
   const type = quizSettings.quizType;
-  const history = JSON.parse(localStorage.getItem(`supplementalQuizHistory_${type}`)) || [];
+  const normalizedType = getNormalizedQuizType(type);
+  const history = JSON.parse(localStorage.getItem(`supplementalQuizHistory_${normalizedType}`)) || [];
   const typeText = document.querySelector(`button[data-type-pair="${type}"]`)?.textContent || document.querySelector(`button[data-type-pair="${type.split("-").reverse().join("-")}"]`)?.textContent || "N/A";
   const newResult = { score: scoreText, date: new Date().toLocaleString(), type: typeText };
   history.unshift(newResult);
-  localStorage.setItem(`supplementalQuizHistory_${type}`, JSON.stringify(history.slice(0, 15)));
+  localStorage.setItem(`supplementalQuizHistory_${normalizedType}`, JSON.stringify(history.slice(0, 15)));
 }
 
 function renderHistory() {
-  if (!quizSettings.quizType) {
+  const type = quizSettings.quizType;
+  if (!type) {
     alert("Please select a quiz type to view its history.");
     return;
   }
-  const type = quizSettings.quizType;
+  const normalizedType = getNormalizedQuizType(type);
   const typeText = document.querySelector(`button[data-type-pair="${type}"]`)?.textContent || document.querySelector(`button[data-type-pair="${type.split("-").reverse().join("-")}"]`)?.textContent;
   historyQuizTypeDisplay.textContent = typeText;
+  
   settingsScreen.classList.add("hidden");
   historyScreen.classList.remove("hidden");
 
-  const history = JSON.parse(localStorage.getItem(`supplementalQuizHistory_${type}`)) || [];
+  const history = JSON.parse(localStorage.getItem(`supplementalQuizHistory_${normalizedType}`)) || [];
   historyListEl.innerHTML = "";
 
   if (history.length === 0) {
@@ -452,7 +484,7 @@ function resetAppView() {
   historyScreen.classList.add("hidden");
   settingsScreen.classList.remove("hidden");
   
-  updateSettings("quizType", quizSettings.quizType); // Refresh views
+  updateSettings("quizType", quizSettings.quizType);
   updateSettings("mode", quizSettings.mode);
 }
 
@@ -497,7 +529,6 @@ startPinnedQuizBtn.addEventListener("click", () => {
   }
 });
 
-// Navigation button listeners
 playAgainBtn.addEventListener("click", resetAppView);
 backToSettingsBtn.addEventListener("click", resetAppView);
 backToHomeBtn.addEventListener("click", resetAppView);

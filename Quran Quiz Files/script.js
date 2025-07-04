@@ -47,13 +47,14 @@ let quizState = {
   answered: false,
 };
 let sortState = { column: "number", direction: "asc" };
-
-const PINNED_WORDS_STORAGE_KEY = "quranQuizPinnedWords";
-let pinnedWords =
-  JSON.parse(localStorage.getItem(PINNED_WORDS_STORAGE_KEY)) || [];
+let pinnedWords = [];
 
 // --- Functions ---
-
+function getNormalizedQuizType(type) {
+  if (type === "chaos") return "chaos";
+  const parts = type.split('-');
+  return parts.sort().join('-');
+}
 
 function generateRubyHTML(jpData) {
   if (!Array.isArray(jpData)) return `<span>${jpData}</span>`;
@@ -68,20 +69,22 @@ function generateRubyHTML(jpData) {
 
 function getWordProgress(type) {
   if (!type) return {};
+  const normalizedType = getNormalizedQuizType(type);
   return (
-    JSON.parse(localStorage.getItem(`quranQuizWordProgress_${type}`)) || {}
+    JSON.parse(localStorage.getItem(`quranQuizWordProgress_${normalizedType}`)) || {}
   );
 }
 
 function updateWordProgress(wordIndex, isCorrect, type) {
   if (type === "chaos") return; // Do not track progress for chaos mode
-  const progress = getWordProgress(type);
+  const normalizedType = getNormalizedQuizType(type);
+  const progress = getWordProgress(normalizedType); // Use normalized type here too
   if (!progress[wordIndex]) {
     progress[wordIndex] = { correct: 0, incorrect: 0 };
   }
   isCorrect ? progress[wordIndex].correct++ : progress[wordIndex].incorrect++;
   localStorage.setItem(
-    `quranQuizWordProgress_${type}`,
+    `quranQuizWordProgress_${normalizedType}`,
     JSON.stringify(progress)
   );
 }
@@ -138,21 +141,18 @@ function checkUnlocks() {
   const unlockState = getUnlockState();
   let stateChanged = false;
 
-  // Check for reverse German unlock
   if (!unlockState.reverseDe && masteryDe >= 20) {
     showAchievementPopup("Reverse German mode unlocked!");
     unlockState.reverseDe = true;
     stateChanged = true;
   }
 
-  // Check for reverse Japanese unlock
   if (!unlockState.reverseJp && masteryJp >= 20) {
     showAchievementPopup("Reverse Japanese mode unlocked!");
     unlockState.reverseJp = true;
     stateChanged = true;
   }
 
-  // Check for de-jp unlock
   const deJpUnlocked = masteryDe >= 80 && masteryJp >= 80;
   if (!unlockState.deJp && deJpUnlocked) {
     showAchievementPopup("German ↔ Japanese mode unlocked!");
@@ -167,7 +167,6 @@ function checkUnlocks() {
     deJpButton.textContent = `??? Mode (80%)`;
   }
 
-  // Check for chaos unlock
   const chaosUnlocked = masteryDe >= 40 && masteryJp >= 40;
   if (!unlockState.chaos && chaosUnlocked) {
     showAchievementPopup("Chaos Mode unlocked!");
@@ -189,7 +188,12 @@ function checkUnlocks() {
 
 function updateSettings(type, value) {
   quizSettings[type] = value;
+  
   if (type === "quizType") {
+    const normalizedType = getNormalizedQuizType(value);
+    const key = `quranQuizPinnedWords_${normalizedType}`;
+    pinnedWords = JSON.parse(localStorage.getItem(key)) || [];
+
     const typeTextMap = {
       "ar-de": "Arabic → German",
       "de-ar": "German → Arabic",
@@ -229,23 +233,30 @@ function updateSettings(type, value) {
     renderWordProgress(value);
     populateProgressView(value);
   }
+
   if (type === "mode") {
     document.querySelectorAll(".mode-option").forEach((opt) => {
       opt.classList.toggle("mode-active", opt.id === `mode-${value}`);
     });
+
+    if (quizSettings.mode !== "sequential") {
+      pinnedWords = [];
+      const normalizedType = getNormalizedQuizType(quizSettings.quizType);
+      const key = `quranQuizPinnedWords_${normalizedType}`;
+      localStorage.removeItem(key);
+    }
+    
     const isSequential = value === "sequential";
     progressViewContainer.classList.toggle("hidden", !isSequential);
-    if (isSequential) {
-      updatePinnedUI();
-    } else {
-      pinnedQuizControls.classList.add("hidden");
-    }
+    
+    updatePinnedUI();
   }
 }
 
+
 function populateProgressView(type) {
   progressViewContainer.innerHTML = "";
-  if (!type || type === "chaos") return; // Don't show for chaos or null type
+  if (!type || type === "chaos") return;
 
   const progress = getWordProgress(type);
 
@@ -294,17 +305,21 @@ function handleSequentialClick(e) {
 function togglePin(index, buttonEl) {
   const pinIndex = pinnedWords.indexOf(index);
   if (pinIndex > -1) {
-    pinnedWords.splice(pinIndex, 1); // Unpin
+    pinnedWords.splice(pinIndex, 1);
     buttonEl.classList.remove("word-pinned");
   } else {
     if (pinnedWords.length < 20) {
-      pinnedWords.push(index); // Pin
+      pinnedWords.push(index);
       buttonEl.classList.add("word-pinned");
     } else {
       alert("You can only pin up to 20 words.");
     }
   }
-  localStorage.setItem(PINNED_WORDS_STORAGE_KEY, JSON.stringify(pinnedWords));
+
+  const normalizedType = getNormalizedQuizType(quizSettings.quizType);
+  const key = `quranQuizPinnedWords_${normalizedType}`;
+  localStorage.setItem(key, JSON.stringify(pinnedWords));
+
   updatePinnedUI();
 }
 
@@ -421,7 +436,7 @@ function startQuiz({ startIndex, numQuestions, customQuestions }) {
     quizState.questions = [...wordData]
       .sort(() => 0.5 - Math.random())
       .slice(0, 20); // Chaos mode is always random 20
-  } else {
+  } else { // Sequential mode (unpinned)
     quizState.questions = wordData.slice(startIndex);
   }
 
@@ -431,6 +446,8 @@ function startQuiz({ startIndex, numQuestions, customQuestions }) {
 
   settingsScreen.classList.add("hidden");
   quizScreen.classList.remove("hidden");
+  resultsScreen.classList.add("hidden");
+  historyScreen.classList.add("hidden");
 
   renderQuestion();
 }
@@ -448,9 +465,8 @@ function renderQuestion() {
     } while (aLang === qLang);
   }
 
-  // Question Text
   let questionHTML = "";
-  questionTextEl.className = "font-bold text-gray-900"; // Reset
+  questionTextEl.className = "font-bold text-gray-900";
   if (qLang === "ar") {
     questionHTML = question.arabic;
     questionTextEl.classList.add("font-arabic", "text-6xl", "md:text-7xl");
@@ -463,7 +479,6 @@ function renderQuestion() {
   }
   questionTextEl.innerHTML = questionHTML;
 
-  // Hint setup
   englishHintContainer.innerHTML = "";
   if (quizSettings.quizType !== "chaos") {
     englishHintContainer.innerHTML = `<button id="show-hint-btn" class="text-sm text-blue-600 border border-blue-600 rounded-full px-4 py-1 hover:bg-blue-50 transition-all">Show English Hint</button>`;
@@ -472,7 +487,6 @@ function renderQuestion() {
     });
   }
 
-  // MCQ options setup
   const correctAnswer = question.answer;
   let distractors = [];
   while (distractors.length < 3) {
@@ -531,10 +545,14 @@ function handleAnswer(e) {
   if (isCorrect) quizState.score++;
 
   document.querySelectorAll(".mcq-option").forEach((btn) => {
-    btn.classList.add("no-pointer-events");
-    if (btn.dataset.correct === "true") btn.classList.add("correct-answer");
-    else btn.classList.add("wrong-answer");
+    btn.disabled = true;
+    if (btn.dataset.correct === "true") {
+      btn.classList.add("correct-answer");
+    }
   });
+   if (!isCorrect) {
+    e.currentTarget.classList.add("wrong-answer");
+  }
 
   setTimeout(() => {
     if (quizState.currentQuestionIndex < quizState.questions.length - 1) {
@@ -543,7 +561,7 @@ function handleAnswer(e) {
     } else {
       showResults();
     }
-  }, 800);
+  }, 600);
 }
 
 function showResults() {
@@ -557,8 +575,9 @@ function showResults() {
 function saveResultToHistory(scoreText) {
   const type = quizSettings.quizType;
   if (type === "chaos") return;
+  const normalizedType = getNormalizedQuizType(type);
   const history =
-    JSON.parse(localStorage.getItem(`quranQuizHistory_${type}`)) || [];
+    JSON.parse(localStorage.getItem(`quranQuizHistory_${normalizedType}`)) || [];
   const typeText =
     document.querySelector(`button[data-type-pair="${type}"]`)?.textContent ||
     document.querySelector(
@@ -572,27 +591,30 @@ function saveResultToHistory(scoreText) {
   };
   history.unshift(newResult);
   localStorage.setItem(
-    `quranQuizHistory_${type}`,
+    `quranQuizHistory_${normalizedType}`,
     JSON.stringify(history.slice(0, 15))
   );
 }
 
 function renderHistory() {
-  if (!quizSettings.quizType || quizSettings.quizType === "chaos") {
+  const type = quizSettings.quizType;
+  if (!type || type === "chaos") {
     alert("Please select a standard quiz type to view its history.");
     return;
   }
-  const type = quizSettings.quizType;
+  const normalizedType = getNormalizedQuizType(type);
   const typeText =
     document.querySelector(`button[data-type-pair="${type}"]`)?.textContent ||
     document.querySelector(
       `button[data-type-pair="${type.split("-").reverse().join("-")}"]`
     )?.textContent;
   historyQuizTypeDisplay.textContent = typeText;
+  
   settingsScreen.classList.add("hidden");
   historyScreen.classList.remove("hidden");
+
   const history =
-    JSON.parse(localStorage.getItem(`quranQuizHistory_${type}`)) || [];
+    JSON.parse(localStorage.getItem(`quranQuizHistory_${normalizedType}`)) || [];
   historyListEl.innerHTML = "";
 
   if (history.length === 0) {
@@ -628,7 +650,7 @@ quizTypeSelector.addEventListener("click", (e) => {
   const pair = button.dataset.typePair;
   if (pair === "chaos") {
     updateSettings("quizType", "chaos");
-    startQuiz({}); // Start chaos mode immediately
+    startQuiz({});
     return;
   }
 
@@ -636,18 +658,20 @@ quizTypeSelector.addEventListener("click", (e) => {
   const currentType = quizSettings.quizType;
 
   let reverseUnlocked = false;
-  if (pair === "ar-de") {
-    reverseUnlocked = getModeMastery("ar-de") >= 20;
-  } else if (pair === "ar-jp") {
-    reverseUnlocked = getModeMastery("ar-jp") >= 20;
-  } else if (pair === "de-jp") {
-    reverseUnlocked = true; // Assumes if de-jp is unlocked, reverse is too
+  const unlockState = getUnlockState();
+
+  if (pair === "ar-de" || pair === "de-ar") {
+    reverseUnlocked = unlockState.reverseDe;
+  } else if (pair === "ar-jp" || pair === "jp-ar") {
+    reverseUnlocked = unlockState.reverseJp;
+  } else if (pair === "de-jp" || pair === "jp-de") {
+    reverseUnlocked = true;
   }
 
   if (currentType === pair && reverseUnlocked) {
-    updateSettings("quizType", `${p2}-${p1}`); // Reverse if unlocked
+    updateSettings("quizType", `${p2}-${p1}`);
   } else {
-    updateSettings("quizType", pair); // Set to primary, or re-set if reverse is locked
+    updateSettings("quizType", pair);
   }
 });
 
@@ -655,11 +679,6 @@ quizModeSelector.addEventListener("click", (e) => {
   const modeOption = e.target.closest(".mode-option");
   if (modeOption) {
     const newMode = modeOption.id.replace("mode-", "");
-    if (quizSettings.mode !== newMode) {
-      pinnedWords = [];
-      localStorage.removeItem(PINNED_WORDS_STORAGE_KEY);
-      updatePinnedUI();
-    }
     updateSettings("mode", newMode);
   }
 });
@@ -693,6 +712,7 @@ startPinnedQuizBtn.addEventListener("click", () => {
 });
 
 playAgainBtn.addEventListener("click", resetAppView);
+
 quitQuizBtn.addEventListener("click", () => {
     window.location.href = '../index.html';
 });
@@ -702,15 +722,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const view = urlParams.get('view');
 
-    updateSettings("quizType", "ar-de"); // Set a default
+    updateSettings("quizType", "ar-de");
     updateSettings("mode", "random");
     checkUnlocks();
-    populateProgressView("ar-de");
-    renderWordProgress("ar-de");
     
     if (view === 'history') {
         renderHistory();
-    } else {
-        resetAppView();
     }
 });
