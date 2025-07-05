@@ -123,6 +123,8 @@ function updateWordProgress(wordIndex, isCorrect, type) {
 }
 
 function updateSettings(type, value) {
+  // Capture the mode BEFORE it's updated to check if it changed.
+  const previousMode = quizSettings.mode;
   quizSettings[type] = value;
   wordData = getActiveWordData();
 
@@ -170,15 +172,16 @@ function updateSettings(type, value) {
     }
 
     renderWordProgress(value);
-    populateProgressView(value); // This will now use the correctly loaded pinnedWords
+    populateProgressView(value);
   }
 
   if (type === "mode") {
     document.querySelectorAll(".mode-option").forEach((opt) => {
       opt.classList.toggle("mode-active", opt.id === `mode-${value}`);
     });
-    // Clear pins for the current language if mode is changed away from sequential
-    if (quizSettings.mode !== "sequential") {
+
+    // This new logic only clears pins if you switch FROM sequential TO another mode.
+    if (previousMode === "sequential" && value !== "sequential") {
         pinnedWords = [];
         const normalizedType = getNormalizedQuizType(quizSettings.quizType);
         const key = `supplementalQuizPinnedWords_${normalizedType}`;

@@ -213,6 +213,8 @@ function checkUnlocks() {
 }
 
 function updateSettings(type, value) {
+  // Capture the mode BEFORE it's updated.
+  const previousMode = quizSettings.mode; 
   quizSettings[type] = value;
   
   if (type === "quizType") {
@@ -260,12 +262,15 @@ function updateSettings(type, value) {
     populateProgressView(value);
   }
 
+  // 👇 REPLACE THIS ENTIRE BLOCK
   if (type === "mode") {
     document.querySelectorAll(".mode-option").forEach((opt) => {
       opt.classList.toggle("mode-active", opt.id === `mode-${value}`);
     });
 
-    if (quizSettings.mode !== "sequential") {
+    // This new logic only clears pins if you switch FROM sequential TO another mode.
+    // This prevents the wipeout on page load.
+    if (previousMode === "sequential" && value !== "sequential") {
       pinnedWords = [];
       const normalizedType = getNormalizedQuizType(quizSettings.quizType);
       const key = `quranQuizPinnedWords_${normalizedType}`;
