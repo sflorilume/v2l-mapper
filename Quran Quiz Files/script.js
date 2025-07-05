@@ -16,7 +16,6 @@ const pinnedQuizControls = document.getElementById("pinned-quiz-controls");
 const pinnedCountEl = document.getElementById("pinned-count");
 const startPinnedQuizBtn = document.getElementById("start-pinned-quiz-btn");
 
-const backToHomeBtn = document.getElementById("back-to-home-btn");
 const playAgainBtn = document.getElementById("play-again-btn");
 const quitQuizBtn = document.getElementById("quit-quiz-btn");
 
@@ -26,7 +25,7 @@ const questionTextEl = document.getElementById("question-text");
 const englishHintContainer = document.getElementById("english-hint-container");
 const mcqOptionsContainer = document.getElementById("mcq-options");
 const finalScoreEl = document.getElementById("final-score");
-const historyListEl = document.getElementById("history-list");
+// const historyListEl = document.getElementById("history-list"); // REMOVED
 const wordProgressTableBody = document.getElementById(
   "word-progress-table-body"
 );
@@ -39,7 +38,7 @@ const progressTableHeader = document.getElementById("progress-table-header");
 const wordProgressSection = document.getElementById("word-progress-section");
 
 // --- State ---
-let quizSettings = { quizType: "ar-de", mode: "random" }; // Default to a type
+let quizSettings = { quizType: "ar-de", mode: "random" };
 let quizState = {
   questions: [],
   currentQuestionIndex: 0,
@@ -48,6 +47,10 @@ let quizState = {
 };
 let sortState = { column: "number", direction: "asc" };
 let pinnedWords = [];
+let historyViewType = "ar-de";
+const availableHistoryTypes = ["ar-de", "ar-jp", "de-jp"];
+let historyChart = null; // For the daily progress line chart
+let languageComparisonChart = null; // For the overall progress doughnut chart
 
 // --- Functions ---
 function getNormalizedQuizType(type) {
@@ -58,10 +61,10 @@ function getNormalizedQuizType(type) {
 
 function getTodayDateString() {
   const today = new Date();
-  const yyyy = today.getFullYear();
+  const year = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+  return `${year}-${mm}-${dd}`;
 }
 
 function generateRubyHTML(jpData) {
@@ -84,10 +87,9 @@ function getWordProgress(type) {
 }
 
 function updateWordProgress(wordIndex, isCorrect, type) {
-  if (type === "chaos") return; // Do not track progress for chaos mode
+  if (type === "chaos") return;
   const normalizedType = getNormalizedQuizType(type);
   const progress = getWordProgress(normalizedType);
-  
   const wasAlreadyCorrect = progress[wordIndex] && progress[wordIndex].correct > 0;
 
   if (!progress[wordIndex]) {
@@ -99,12 +101,10 @@ function updateWordProgress(wordIndex, isCorrect, type) {
     JSON.stringify(progress)
   );
 
-  // If the word was answered correctly for the first time, log it as a daily achievement
   if (isCorrect && !wasAlreadyCorrect) {
     const today = getTodayDateString();
     const dailyProgressKey = `quranQuizDailyProgress_${normalizedType}`;
     const dailyProgress = JSON.parse(localStorage.getItem(dailyProgressKey)) || {};
-    
     if (!dailyProgress[today]) {
       dailyProgress[today] = [];
     }
@@ -213,10 +213,9 @@ function checkUnlocks() {
 }
 
 function updateSettings(type, value) {
-  // Capture the mode BEFORE it's updated.
-  const previousMode = quizSettings.mode; 
+  const previousMode = quizSettings.mode;
   quizSettings[type] = value;
-  
+
   if (type === "quizType") {
     const normalizedType = getNormalizedQuizType(value);
     const key = `quranQuizPinnedWords_${normalizedType}`;
@@ -262,28 +261,22 @@ function updateSettings(type, value) {
     populateProgressView(value);
   }
 
-  // 👇 REPLACE THIS ENTIRE BLOCK
   if (type === "mode") {
     document.querySelectorAll(".mode-option").forEach((opt) => {
       opt.classList.toggle("mode-active", opt.id === `mode-${value}`);
     });
 
-    // This new logic only clears pins if you switch FROM sequential TO another mode.
-    // This prevents the wipeout on page load.
     if (previousMode === "sequential" && value !== "sequential") {
       pinnedWords = [];
       const normalizedType = getNormalizedQuizType(quizSettings.quizType);
       const key = `quranQuizPinnedWords_${normalizedType}`;
       localStorage.removeItem(key);
     }
-    
     const isSequential = value === "sequential";
     progressViewContainer.classList.toggle("hidden", !isSequential);
-    
     updatePinnedUI();
   }
 }
-
 
 function populateProgressView(type) {
   progressViewContainer.innerHTML = "";
@@ -410,18 +403,18 @@ function renderWordProgress(type) {
   displayData.forEach((word) => {
     const row = document.createElement("tr");
     row.innerHTML = `
-                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${
-                  word.index + 1
-                }</td>
-                <td class="px-4 py-2 whitespace-nowrap text-lg font-arabic">${
-                  word.arabic
-                }</td>
-                <td class="px-4 py-2 whitespace-nowrap text-sm text-green-600 font-semibold">${
-                  word.correct
-                }</td>
-                <td class="px-4 py-2 whitespace-nowrap text-sm text-red-600 font-semibold">${
-                  word.incorrect
-                }</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${
+                word.index + 1
+              }</td>
+              <td class="px-4 py-2 whitespace-nowrap text-lg font-arabic">${
+                word.arabic
+              }</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-green-600 font-semibold">${
+                word.correct
+              }</td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-red-600 font-semibold">${
+                word.incorrect
+              }</td>
             `;
     wordProgressTableBody.appendChild(row);
   });
@@ -581,7 +574,7 @@ function handleAnswer(e) {
       btn.classList.add("correct-answer");
     }
   });
-   if (!isCorrect) {
+    if (!isCorrect) {
     e.currentTarget.classList.add("wrong-answer");
   }
 
@@ -600,56 +593,127 @@ function showResults() {
   resultsScreen.classList.remove("hidden");
   const finalScoreText = `${quizState.score} / ${quizState.questions.length}`;
   finalScoreEl.textContent = finalScoreText;
+}
 
+function getLearnedCountPerLanguage() {
+    const results = {
+        labels: [],
+        data: []
+    };
+    const typeTextMap = { "ar-de": "Arabic-German", "ar-jp": "Arabic-Japanese", "de-jp": "German-Japanese" };
+
+    availableHistoryTypes.forEach(type => {
+        const progress = getWordProgress(type);
+        const learnedCount = Object.values(progress).filter(p => p.correct > 0).length;
+        results.labels.push(typeTextMap[type]);
+        results.data.push(learnedCount);
+    });
+    return results;
+}
+
+function calculateTotalWordsLearned() {
+  const learnedWordIndices = new Set();
+  availableHistoryTypes.forEach(type => {
+      const dailyProgressKey = `quranQuizDailyProgress_${getNormalizedQuizType(type)}`;
+      const dailyProgress = JSON.parse(localStorage.getItem(dailyProgressKey)) || {};
+      Object.values(dailyProgress).forEach(wordArray => {
+          wordArray.forEach(wordIndex => {
+              learnedWordIndices.add(wordIndex);
+          });
+      });
+  });
+  return learnedWordIndices.size;
 }
 
 function renderHistory() {
-  const type = quizSettings.quizType;
-  if (!type || type === "chaos") {
-    alert("Please select a standard quiz type to view its history.");
-    return;
-  }
-  const normalizedType = getNormalizedQuizType(type);
-  const typeText =
-    document.querySelector(`button[data-type-pair="${type}"]`)?.textContent ||
-    document.querySelector(
-      `button[data-type-pair="${type.split("-").reverse().join("-")}"]`
-    )?.textContent;
-  historyQuizTypeDisplay.textContent = typeText;
-  
   settingsScreen.classList.add("hidden");
   historyScreen.classList.remove("hidden");
   
+  document.getElementById("history-total-all-time").textContent = calculateTotalWordsLearned();
+
+  if (languageComparisonChart) {
+    languageComparisonChart.destroy();
+  }
+  const comparisonData = getLearnedCountPerLanguage();
+  const comparisonCtx = document.getElementById('language-comparison-chart').getContext('2d');
+  languageComparisonChart = new Chart(comparisonCtx, {
+      type: 'doughnut',
+      data: {
+          labels: comparisonData.labels,
+          datasets: [{
+              label: 'Words Learned',
+              data: comparisonData.data,
+              backgroundColor: [
+                  'rgba(59, 130, 246, 0.7)',
+                  'rgba(239, 68, 68, 0.7)',
+                  'rgba(245, 158, 11, 0.7)',
+              ],
+              borderColor: [
+                'rgba(59, 130, 246, 1)',
+                'rgba(239, 68, 68, 1)',
+                'rgba(245, 158, 11, 1)',
+              ],
+              borderWidth: 1
+          }]
+      },
+      options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+              legend: {
+                  position: 'top',
+              }
+          }
+      }
+  });
+
+  const normalizedType = getNormalizedQuizType(historyViewType);
+  const typeTextMap = { "ar-de": "Arabic ↔ German", "ar-jp": "Arabic ↔ Japanese", "de-jp": "German ↔ Japanese" };
+  historyQuizTypeDisplay.textContent = typeTextMap[normalizedType] || "N/A";
+
   const dailyProgressKey = `quranQuizDailyProgress_${normalizedType}`;
   const dailyProgress = JSON.parse(localStorage.getItem(dailyProgressKey)) || {};
-  let totalWords = 0;
-  let listHTML = "";
+  
+  const chartLabels = [];
+  const chartData = [];
 
   for (let i = 0; i < 15; i++) {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    const dateString = `${yyyy}-${mm}-${dd}`;
-
+    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const wordsMemorized = dailyProgress[dateString]?.length || 0;
-    totalWords += wordsMemorized;
-
-    const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
     
-    listHTML += `
-      <li class="p-3 bg-gray-50 rounded-lg flex justify-between items-center text-sm">
-        <span class="font-medium text-gray-700">${formattedDate} ${i === 0 ? '<span class="text-blue-500 font-bold">(Today)</span>' : ''}</span>
-        <span class="font-bold text-lg ${wordsMemorized > 0 ? 'text-green-600' : 'text-gray-400'}">${wordsMemorized} words</span>
-      </li>
-    `;
+    chartLabels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    chartData.push(wordsMemorized);
   }
 
-  const average = (totalWords / 15).toFixed(1);
-  document.getElementById("history-average").textContent = average;
-  historyListEl.innerHTML = listHTML;
+  chartLabels.reverse();
+  chartData.reverse();
+  
+  if (historyChart) {
+    historyChart.destroy();
+  }
+  const ctx = document.getElementById('history-chart').getContext('2d');
+  historyChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: chartLabels,
+      datasets: [{
+        label: 'Words Learned',
+        data: chartData,
+        fill: true,
+        backgroundColor: 'rgba(59, 130, 246, 0.2)', 
+        borderColor: 'rgba(59, 130, 246, 1)',
+        tension: 0.1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
 }
 
 function resetAppView() {
@@ -707,6 +771,7 @@ quizModeSelector.addEventListener("click", (e) => {
 slider.addEventListener("input", (e) => {
   sliderValue.textContent = e.target.value;
 });
+
 slider.addEventListener("click", (e) => {
   if (quizSettings.mode === "random")
     startQuiz({ numQuestions: parseInt(e.target.value) });
@@ -738,6 +803,13 @@ quitQuizBtn.addEventListener("click", () => {
     window.location.href = '../index.html';
 });
 
+document.getElementById('toggle-history-lang-btn').addEventListener('click', () => {
+    const currentIndex = availableHistoryTypes.indexOf(getNormalizedQuizType(historyViewType));
+    const nextIndex = (currentIndex + 1) % availableHistoryTypes.length;
+    historyViewType = availableHistoryTypes[nextIndex];
+    renderHistory();
+});
+
 // --- Initial Load ---
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -748,6 +820,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkUnlocks();
     
     if (view === 'history') {
+        historyViewType = 'ar-de';
         renderHistory();
     }
 });
