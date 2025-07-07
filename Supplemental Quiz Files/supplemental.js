@@ -296,9 +296,11 @@ function renderWordProgress(type) {
     return { ...word, index, correct: stats.correct, incorrect: stats.incorrect };
   });
 
+  // Add the new sorting condition for "correct"
   displayData.sort((a, b) => {
     const dir = sortState.direction === "asc" ? 1 : -1;
     if (sortState.column === "number") return (a.index - b.index) * dir;
+    if (sortState.column === "correct") return (a.correct - b.correct) * dir; // <-- ADD THIS LINE
     if (sortState.column === "mistakes") return (a.incorrect - b.incorrect) * dir;
     return 0;
   });

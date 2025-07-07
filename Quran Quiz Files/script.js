@@ -391,9 +391,11 @@ function renderWordProgress(type) {
     };
   });
 
+  // This sorting logic correctly re-orders the data before rendering
   displayData.sort((a, b) => {
     const dir = sortState.direction === "asc" ? 1 : -1;
     if (sortState.column === "number") return (a.index - b.index) * dir;
+    if (sortState.column === "correct") return (a.correct - b.correct) * dir;
     if (sortState.column === "mistakes")
       return (a.incorrect - b.incorrect) * dir;
     return 0;
@@ -402,20 +404,21 @@ function renderWordProgress(type) {
   wordProgressTableBody.innerHTML = "";
   displayData.forEach((word) => {
     const row = document.createElement("tr");
+    // This HTML structure is correct, creating one row with four cells
     row.innerHTML = `
-              <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${
-                word.index + 1
-              }</td>
-              <td class="px-4 py-2 whitespace-nowrap text-lg font-arabic">${
-                word.arabic
-              }</td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-green-600 font-semibold">${
-                word.correct
-              }</td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-red-600 font-semibold">${
-                word.incorrect
-              }</td>
-            `;
+      <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${
+        word.index + 1
+      }</td>
+      <td class="px-4 py-2 whitespace-nowrap text-lg font-arabic">${
+        word.arabic
+      }</td>
+      <td class="px-4 py-2 whitespace-nowrap text-sm text-green-600 font-semibold">${
+        word.correct
+      }</td>
+      <td class="px-4 py-2 whitespace-nowrap text-sm text-red-600 font-semibold">${
+        word.incorrect
+      }</td>
+    `;
     wordProgressTableBody.appendChild(row);
   });
 
