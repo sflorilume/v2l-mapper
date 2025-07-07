@@ -1,4 +1,5 @@
 const germanWords = [
+    // === LEVEL 1 (Expanded) ===
     // Personal / Subject & Object
     { question: "ich", answer: "I" },
     { question: "du", answer: "you (informal)" },
@@ -14,6 +15,7 @@ const germanWords = [
     { question: "uns", answer: "us" },
     { question: "euch", answer: "you all" },
     { question: "Ihnen", answer: "you (formal object)" },
+
     // Possessive
     { question: "mein", answer: "my" },
     { question: "dein", answer: "your" },
@@ -23,12 +25,14 @@ const germanWords = [
     { question: "euer", answer: "your (plural informal)" },
     { question: "deren", answer: "their (relative genitive)" },
     { question: "dessen", answer: "his/its (relative genitive)" },
+
     // Reflexive
     { question: "mich", answer: "myself" },
     { question: "dich", answer: "yourself" },
     { question: "sich", answer: "himself / herself / themselves" },
     { question: "uns", answer: "ourselves" },
     { question: "euch", answer: "yourselves" },
+
     // Demonstrative
     { question: "dieser", answer: "this" },
     { question: "jener", answer: "that" },
@@ -38,6 +42,7 @@ const germanWords = [
     { question: "solche", answer: "such" },
     { question: "derselbe", answer: "the same" },
     { question: "derjenige", answer: "the one" },
+
     // Interrogative
     { question: "wer", answer: "who" },
     { question: "was", answer: "what" },
@@ -47,8 +52,7 @@ const germanWords = [
     { question: "wie", answer: "how" },
     { question: "welcher", answer: "which" },
     { question: "wessen", answer: "whose" },
-    // Relative
-    { question: "der / die / das", answer: "who, which" },
+
     // Conjunctions
     { question: "und", answer: "and" },
     { question: "aber", answer: "but" },
@@ -70,6 +74,7 @@ const germanWords = [
     { question: "solange", answer: "as long as" },
     { question: "damit", answer: "so that" },
     { question: "da", answer: "since (because)" },
+
     // Discourse Markers
     { question: "also", answer: "so / therefore" },
     { question: "trotzdem", answer: "nevertheless" },
@@ -90,6 +95,7 @@ const germanWords = [
     { question: "dazu", answer: "in addition / to that" },
     { question: "folglich", answer: "consequently" },
     { question: "andernfalls", answer: "otherwise" },
+
     // Prepositions
     { question: "durch", answer: "through" },
     { question: "für", answer: "for" },
@@ -102,5 +108,328 @@ const germanWords = [
     { question: "nach", answer: "after / to" },
     { question: "seit", answer: "since" },
     { question: "von", answer: "from / of" },
-    { question: "zu", answer: "to" }
+    { question: "zu", answer: "to" },
+
+    // === NEW LEVEL 1 ADDITIONS (Categorized) ===
+    // **Core Nouns (with articles)**
+    { question: "der Mann", answer: "the man" },
+    { question: "die Frau", answer: "the woman" },
+    { question: "das Kind", answer: "the child" },
+    { question: "die Zeit", answer: "time" },
+    { question: "das Essen", answer: "food" },
+    { question: "das Haus", answer: "the house" },
+    { question: "die Stadt", answer: "the city" },
+    { question: "das Wasser", answer: "water" },
+
+    // **Common Adjectives**
+    { question: "gut", answer: "good" },
+    { question: "schlecht", answer: "bad" },
+    { question: "groß", answer: "big" },
+    { question: "klein", answer: "small" },
+    { question: "alt", answer: "old" },
+    { question: "neu", answer: "new" },
+    { question: "schnell", answer: "fast" },
+    { question: "langsam", answer: "slow" },
+
+    // **Basic Verbs (Infinitive)**
+    { question: "sein", answer: "to be" },
+    { question: "haben", answer: "to have" },
+    { question: "gehen", answer: "to go" },
+    { question: "machen", answer: "to do/make" },
+    { question: "kommen", answer: "to come" },
+    { question: "sehen", answer: "to see" },
+    { question: "sagen", answer: "to say" },
+    { question: "geben", answer: "to give" },
+
+    // **Time/Date Words**
+    { question: "heute", answer: "today" },
+    { question: "morgen", answer: "tomorrow" },
+    { question: "gestern", answer: "yesterday" },
+    { question: "die Stunde", answer: "the hour" },
+    { question: "die Minute", answer: "the minute" },
+
+
+     // === LEVEL 2 (Verbs + Grammar) ===
+    // **Basic Verbs (Infinitive)**
+    { question: "arbeiten", answer: "to work" },
+    { question: "fragen", answer: "to ask" },
+    { question: "antworten", answer: "to answer" },
+    { question: "wohnen", answer: "to live/reside" },
+    { question: "öffnen", answer: "to open" },
+    { question: "schließen", answer: "to close" },
+    { question: "beginnen", answer: "to begin" },
+    { question: "enden", answer: "to end" },
+    { question: "verstehen", answer: "to understand" },
+    { question: "vergessen", answer: "to forget" },
+
+    // **New Essential Verbs (Infinitive)**
+    { question: "lernen", answer: "to learn" },
+    { question: "lehren", answer: "to teach" },
+    { question: "lesen", answer: "to read" },
+    { question: "schreiben", answer: "to write" },
+    { question: "zeichnen", answer: "to draw" },
+    { question: "spielen", answer: "to play" },
+    { question: "singen", answer: "to sing" },
+    { question: "tanzen", answer: "to dance" },
+    { question: "hören", answer: "to hear/listen" },
+    { question: "sprechen", answer: "to speak" },
+    { question: "erzählen", answer: "to tell/narrate" },
+    { question: "erklären", answer: "to explain" },
+    { question: "denken", answer: "to think" },
+    { question: "glauben", answer: "to believe" },
+    { question: "wissen", answer: "to know (a fact)" },
+    { question: "kennen", answer: "to know (be familiar with)" },
+    { question: "treffen", answer: "to meet" },
+    { question: "besuchen", answer: "to visit" },
+    { question: "einladen", answer: "to invite" },
+    { question: "folgen", answer: "to follow" },
+    { question: "helfen", answer: "to help" },
+    { question: "brauchen", answer: "to need" },
+    { question: "suchen", answer: "to search/look for" },
+    { question: "finden", answer: "to find" },
+    { question: "verlieren", answer: "to lose" },
+    { question: "gewinnen", answer: "to win" },
+    { question: "kaufen", answer: "to buy" },
+    { question: "verkaufen", answer: "to sell" },
+    { question: "bezahlen", answer: "to pay" },
+    { question: "verdienen", answer: "to earn" },
+    { question: "sparen", answer: "to save" },
+    { question: "kochen", answer: "to cook" },
+    { question: "backen", answer: "to bake" },
+    { question: "essen", answer: "to eat" },
+    { question: "trinken", answer: "to drink" },
+    { question: "rauchen", answer: "to smoke" },
+    { question: "schlafen", answer: "to sleep" },
+    { question: "aufwachen", answer: "to wake up" },
+    { question: "träumen", answer: "to dream" },
+    { question: "leben", answer: "to live" },
+    { question: "sterben", answer: "to die" },
+    { question: "reisen", answer: "to travel" },
+    { question: "fahren", answer: "to drive/go (by vehicle)" },
+    { question: "fliegen", answer: "to fly" },
+    { question: "schwimmen", answer: "to swim" },
+    { question: "laufen", answer: "to run/walk" },
+    { question: "springen", answer: "to jump" },
+    { question: "sitzen", answer: "to sit" },
+    { question: "stehen", answer: "to stand" },
+    { question: "legen", answer: "to lay (something down)" },
+    { question: "liegen", answer: "to lie (be positioned)" },
+    { question: "stellen", answer: "to place/put (vertical)" },
+    { question: "setzen", answer: "to set/put (on surface)" },
+    { question: "tragen", answer: "to carry/wear" },
+    { question: "bringen", answer: "to bring" },
+    { question: "holen", answer: "to fetch/get" },
+    { question: "waschen", answer: "to wash" },
+    { question: "putzen", answer: "to clean" },
+    { question: "reparieren", answer: "to repair" },
+    { question: "bauen", answer: "to build" },
+    { question: "anrufen", answer: "to call (by phone)" },
+    { question: "telefonieren", answer: "to telephone" },
+    { question: "schicken", answer: "to send" },
+    { question: "empfangen", answer: "to receive" },
+    { question: "bekommen", answer: "to get/receive" },
+    { question: "verlassen", answer: "to leave (a place)" },
+    { question: "anfangen", answer: "to start/begin" },
+    { question: "aufhören", answer: "to stop (doing something)" },
+    { question: "versuchen", answer: "to try/attempt" },
+    { question: "gelingen", answer: "to succeed (in doing)" },
+    { question: "scheitern", answer: "to fail" },
+    { question: "ändern", answer: "to change" },
+    { question: "vergleichen", answer: "to compare" },
+    { question: "entscheiden", answer: "to decide" },
+    { question: "wählen", answer: "to choose/vote" },
+    { question: "planen", answer: "to plan" },
+    { question: "organisieren", answer: "to organize" },
+    { question: "kontrollieren", answer: "to check/control" },
+    { question: "prüfen", answer: "to test/verify" },
+    { question: "feiern", answer: "to celebrate" },
+    { question: "lachen", answer: "to laugh" },
+    { question: "weinen", answer: "to cry" },
+    { question: "lieben", answer: "to love" },
+    { question: "hassen", answer: "to hate" },
+    { question: "mögen", answer: "to like" },
+    { question: "wünschen", answer: "to wish" },
+    { question: "hoffen", answer: "to hope" },
+    { question: "fürchten", answer: "to fear" },
+    { question: "sorgen", answer: "to worry" },
+    { question: "passieren", answer: "to happen" },
+    { question: "erwarten", answer: "to expect" },
+    { question: "überraschen", answer: "to surprise" },
+
+    // **Present Tense Conjugations**
+    { question: "ich mache", answer: "I do/make" },
+    { question: "du sprichst", answer: "you speak" },
+    { question: "er/sie/es nimmt", answer: "he/she/it takes" },
+    { question: "wir geben", answer: "we give" },
+    { question: "ihr lest", answer: "you all read" },
+    { question: "sie/Sie schlafen", answer: "they/you (formal) sleep" },
+     { question: "ich arbeite", answer: "I work" },
+    { question: "du fragst", answer: "you ask" },
+    { question: "er/sie/es wohnt", answer: "he/she/it lives" },
+    { question: "wir öffnen", answer: "we open" },
+    { question: "ihr versteht", answer: "you all understand" },
+
+    // **Modal Verbs (Present)**
+    { question: "ich kann", answer: "I can" },
+    { question: "du musst", answer: "you must" },
+    { question: "er/sie/es will", answer: "he/she/it wants" },
+    { question: "wir dürfen", answer: "we may" },
+    { question: "ihr sollt", answer: "you all should" },
+    { question: "sie/Sie mögen", answer: "they/you (formal) like" },
+
+    // **Past Participles (Perfect Tense)**
+    { question: "gemacht", answer: "done/made" },
+    { question: "gesprochen", answer: "spoken" },
+    { question: "gesehen", answer: "seen" },
+    { question: "gegangen", answer: "gone" },
+    { question: "gehabt", answer: "had" },
+    { question: "gearbeitet", answer: "worked" },
+    { question: "gefragt", answer: "asked" },
+    { question: "geantwortet", answer: "answered" },
+    { question: "gewohnt", answer: "lived" },
+
+    // **Dative Verbs**
+    { question: "helfen (dat)", answer: "to help (requires dative)" },
+    { question: "danken (dat)", answer: "to thank (requires dative)" },
+    { question: "gehören (dat)", answer: "to belong to (requires dative)" },
+
+    // **Accusative Prepositions**
+    { question: "für (akk)", answer: "for" },
+    { question: "durch (akk)", answer: "through" },
+    { question: "ohne (akk)", answer: "without" },
+
+    // **Two-Way Prepositions (Acc/Dat)**
+    { question: "an (akk: 'onto') / (dat: 'at')", answer: "on/at" },
+    { question: "in (akk: 'into') / (dat: 'in')", answer: "into/in" },
+
+    // **Negation & Questions**
+    { question: "Warum?", answer: "Why?" },
+    { question: "Wie viel?", answer: "How much?" },
+    { question: "nichts", answer: "nothing" },
+
+    // === LEVEL 3 (Thematic Vocabulary) ===
+     // === LEVEL 3 (Thematic Vocabulary Expansion) ===
+    // **Daily Routine**
+    { question: "aufstehen", answer: "to get up" },
+    { question: "sich anziehen", answer: "to get dressed" },
+    { question: "frühstücken", answer: "to eat breakfast" },
+    { question: "zur Arbeit gehen", answer: "to go to work" },
+
+    // **City & Transportation**
+    { question: "die U-Bahn", answer: "subway" },
+    { question: "der Bus", answer: "bus" },
+    { question: "die Haltestelle", answer: "bus/tram stop" },
+    { question: "der Fahrplan", answer: "schedule/timetable" },
+
+    // **Shopping**
+    { question: "der Preis", answer: "price" },
+    { question: "teuer", answer: "expensive" },
+    { question: "billig", answer: "cheap" },
+    { question: "der Einkaufswagen", answer: "shopping cart" },
+
+    // **Health & Body**
+    { question: "der Kopf", answer: "head" },
+    { question: "die Hand", answer: "hand" },
+    { question: "das Bein", answer: "leg" },
+    { question: "schmerzen", answer: "to hurt" },
+    { question: "der Arzt", answer: "doctor" },
+
+    // **Numbers 20-100**
+    { question: "zwanzig", answer: "20" },
+    { question: "dreißig", answer: "30" },
+    { question: "vierzig", answer: "40" },
+    { question: "fünfzig", answer: "50" },
+    { question: "hundert", answer: "100" },
+
+    // **Time Expressions**
+    { question: "der Morgen", answer: "morning" },
+    { question: "der Nachmittag", answer: "afternoon" },
+    { question: "der Abend", answer: "evening" },
+    { question: "die Nacht", answer: "night" },
+    { question: "die Woche", answer: "week" },
+
+    // **Common Phrases**
+    { question: "Wie geht's?", answer: "How are you?" },
+    { question: "Es tut mir leid", answer: "I'm sorry" },
+    { question: "Kein Problem", answer: "No problem" },
+    { question: "Vielen Dank", answer: "Thank you very much" },
+
+    // **Household Items**
+    { question: "der Tisch", answer: "table" },
+    { question: "der Stuhl", answer: "chair" },
+    { question: "das Bett", answer: "bed" },
+    { question: "der Kühlschrank", answer: "refrigerator" },
+
+    // **Clothing**
+    { question: "das Hemd", answer: "shirt" },
+    { question: "die Hose", answer: "pants" },
+    { question: "der Rock", answer: "skirt" },
+    { question: "die Schuhe", answer: "shoes" },
+
+    // **Animals**
+    { question: "der Hund", answer: "dog" },
+    { question: "die Katze", answer: "cat" },
+    { question: "das Pferd", answer: "horse" },
+    { question: "der Vogel", answer: "bird" },
+
+    // **Colors**
+    { question: "rot", answer: "red" },
+    { question: "blau", answer: "blue" },
+    { question: "grün", answer: "green" },
+    { question: "gelb", answer: "yellow" },
+    { question: "schwarz", answer: "black" },
+
+    // **Office/School**
+    { question: "der Stift", answer: "pen" },
+    { question: "das Papier", answer: "paper" },
+    { question: "die Tastatur", answer: "keyboard" },
+    { question: "lernen", answer: "to learn" },
+
+    // **Nature**
+    { question: "der Baum", answer: "tree" },
+    { question: "die Blume", answer: "flower" },
+    { question: "der Fluss", answer: "river" },
+    { question: "der Berg", answer: "mountain" },
+
+    
+    // **Daily Life**
+    { question: "der Beruf", answer: "job" },
+    { question: "die Arbeit", answer: "work" },
+    { question: "das Geld", answer: "money" },
+    { question: "einkaufen", answer: "to shop" },
+    { question: "der Supermarkt", answer: "supermarket" },
+
+    // **Home & Family**
+    { question: "die Familie", answer: "family" },
+    { question: "die Mutter", answer: "mother" },
+    { question: "der Vater", answer: "father" },
+    { question: "das Zimmer", answer: "room" },
+    { question: "die Küche", answer: "kitchen" },
+
+    // **Food & Dining**
+    { question: "das Brot", answer: "bread" },
+    { question: "der Käse", answer: "cheese" },
+    { question: "das Fleisch", answer: "meat" },
+    { question: "bezahlen", answer: "to pay" },
+
+    // **Travel & Directions**
+    { question: "der Bahnhof", answer: "train station" },
+    { question: "die Straße", answer: "street" },
+    { question: "links", answer: "left" },
+    { question: "rechts", answer: "right" },
+    { question: "die Karte", answer: "map/ticket" },
+
+    // **Weather**
+    { question: "die Sonne", answer: "sun" },
+    { question: "der Regen", answer: "rain" },
+    { question: "kalt", answer: "cold" },
+    { question: "warm", answer: "warm" },
+    { question: "das Wetter", answer: "weather" },
+
+    // **Common Adjectives (Extended)**
+    { question: "wichtig", answer: "important" },
+    { question: "leicht", answer: "easy/light" },
+    { question: "schwer", answer: "heavy/difficult" },
+    { question: "schnell", answer: "fast" },
+    { question: "laut", answer: "loud" }
 ];
