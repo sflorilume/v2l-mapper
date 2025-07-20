@@ -12,6 +12,7 @@ const progressViewContainer = document.getElementById("progress-view");
 const pinnedQuizControls = document.getElementById("pinned-quiz-controls");
 const pinnedCountEl = document.getElementById("pinned-count");
 const startPinnedQuizBtn = document.getElementById("start-pinned-quiz-btn");
+const startRandomQuizBtn = document.getElementById("start-random-quiz-btn"); 
 
 const playAgainBtn = document.getElementById("play-again-btn");
 const quitQuizBtn = document.getElementById("quit-quiz-btn");
@@ -540,8 +541,15 @@ quizModeSelector.addEventListener("click", (e) => {
 });
 
 slider.addEventListener("input", (e) => { sliderValue.textContent = e.target.value; });
-slider.addEventListener("mouseup", (e) => {
-  if (quizSettings.mode === "random") startQuiz({ numQuestions: parseInt(e.target.value) });
+
+// slider.addEventListener("mouseup", (e) => {
+//   if (quizSettings.mode === "random") startQuiz({ numQuestions: parseInt(e.target.value) });
+// });
+
+startRandomQuizBtn.addEventListener("click", () => {
+    if (quizSettings.mode === 'random') {
+        startQuiz({ numQuestions: parseInt(slider.value) });
+    }
 });
 
 progressTableHeader.addEventListener("click", (e) => {
