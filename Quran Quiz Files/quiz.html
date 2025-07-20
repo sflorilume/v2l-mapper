@@ -77,29 +77,36 @@
               id="quiz-mode-selector"
               class="mt-2 border-2 p-4 rounded-lg space-y-4"
             >
-              <div
-                id="mode-random"
-                class="mode-option p-4 rounded-lg border-2 cursor-pointer"
-              >
-                <h4 class="font-bold text-lg">Randomized Quiz</h4>
-                <p class="text-sm text-gray-600 mb-3">
-                  Test yourself with a random selection of words.
-                </p>
-                <label for="random-quiz-slider" class="text-sm font-medium"
-                  >Number of questions:
-                  <span id="slider-value" class="font-bold text-blue-600"
-                    >20</span
-                  ></label
-                >
-                <input
-                  id="random-quiz-slider"
-                  type="range"
-                  min="5"
-                  max="50"
-                  value="20"
-                  class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-              </div>
+
+            <!-- randomized quiz -->
+              <div id="mode-random" class="mode-option p-4 rounded-lg border-2 cursor-pointer">
+  <h4 class="font-bold text-lg">Randomized Quiz</h4>
+  <p class="text-sm text-gray-600 mb-3">
+    Test yourself with a random selection of words.
+  </p>
+  <label for="random-quiz-slider" class="text-sm font-medium">
+    Number of questions:
+    <span id="slider-value" class="font-bold text-blue-600">20</span>
+  </label>
+  <input
+    id="random-quiz-slider"
+    type="range"
+    min="5"
+    max="50"
+    value="20"
+    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+  />
+  
+  <div class="mt-4 text-center">
+    <button
+      id="start-random-quiz-btn"
+      class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-all"
+    >
+      Start Random Quiz
+    </button>
+  </div>
+  </div>
+
               <div
                 id="mode-sequential"
                 class="mode-option p-4 rounded-lg border-2 cursor-pointer"

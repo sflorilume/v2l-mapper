@@ -15,6 +15,8 @@ const progressViewContainer = document.getElementById("progress-view");
 const pinnedQuizControls = document.getElementById("pinned-quiz-controls");
 const pinnedCountEl = document.getElementById("pinned-count");
 const startPinnedQuizBtn = document.getElementById("start-pinned-quiz-btn");
+const startRandomQuizBtn = document.getElementById("start-random-quiz-btn");
+
 
 const playAgainBtn = document.getElementById("play-again-btn");
 const quitQuizBtn = document.getElementById("quit-quiz-btn");
@@ -775,9 +777,17 @@ slider.addEventListener("input", (e) => {
   sliderValue.textContent = e.target.value;
 });
 
-slider.addEventListener("click", (e) => {
-  if (quizSettings.mode === "random")
-    startQuiz({ numQuestions: parseInt(e.target.value) });
+// removed. we use start button instead
+  // slider.addEventListener("click", (e) => {
+  //   if (quizSettings.mode === "random")
+  //     startQuiz({ numQuestions: parseInt(e.target.value) });
+  // });
+
+// button to start random quiz
+startRandomQuizBtn.addEventListener("click", () => {
+    if (quizSettings.mode === 'random') {
+        startQuiz({ numQuestions: parseInt(slider.value) });
+    }
 });
 
 progressTableHeader.addEventListener("click", (e) => {
